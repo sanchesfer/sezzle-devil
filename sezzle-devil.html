@@ -601,7 +601,7 @@ function update(dt){
       // streak: in-order builds it
       if(c.order===streak){ streak++; combo++; comboFlash=0.6;
         if(streak>=4 && !streakRewarded){ streakRewarded=true; sfx.levelup();
-          score+=500; addToast('⬆️ SEZZLE UP! Perfect on-time streak +500', COL.green);
+          score+=500; addToast('⬆️ Perfect on-time streak! +500', COL.green);
           spawnBurst(player.x+P_W/2,player.y,COL.green,26);
         }
       } else { combo=0; }
@@ -964,14 +964,13 @@ function drawHUD(){
   const got=L.coins.filter(c=>c.collected).length;
   for(let i=0;i<L.coins.length;i++){ const x=92+i*17; ctx.beginPath(); ctx.arc(x,44,6,0,7); ctx.fillStyle=i<got?COL.green:'#d9cfec'; ctx.fill(); if(i<got){ctx.fillStyle='#fff';ctx.font='700 8px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';ctx.textAlign='center';ctx.fillText('$',x,47);ctx.textAlign='left';ctx.font='700 10px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';} }
   ctx.textAlign='left'; ctx.fillStyle=COL.ink; ctx.fillText(got+'/'+L.coins.length,180,48);
-  if(hardMode){ const ok=L.compliance&&L.compliance.collected; drawFleur(214,44,11,ok?COL.green:COL.amber); ctx.font='800 10px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillStyle=ok?COL.green:COL.amber; ctx.textAlign='left'; ctx.fillText(ok?'filed':'file!',224,47); }
+  if(hardMode){ const ok=L.compliance&&L.compliance.collected; drawFleur(214,44,11,ok?COL.green:COL.amber); }  // Québec compliance status shown by the fleur colour (amber = still needed, green = collected)
   // score
   ctx.textAlign='right'; ctx.fillStyle=COL.purple; ctx.font='700 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText((totalScore+score).toLocaleString(),VW-18,52);
   ctx.textAlign='left';
 
   // streak / XP bar
   ctx.fillStyle='rgba(248,247,250,.92)'; rr(8,68,VW-16,20,10); ctx.fill();
-  ctx.fillStyle=COL.purpleLt; ctx.font='700 9px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('SEZZLE UP · on-time streak',16,82);
   const bw=150, bx=VW-16-bw-8, by=73, frac=Math.min(1,streak/4);
   rr(bx,by,bw,10,5); ctx.fillStyle='#e3d9f4'; ctx.fill();
   if(frac>0){ ctx.save(); rr(bx,by,bw*frac,10,5); ctx.clip(); const g=ctx.createLinearGradient(bx,0,bx+bw,0); g.addColorStop(0,COL.green); g.addColorStop(1,'#34d399'); ctx.fillStyle=g; ctx.fillRect(bx,by,bw,10); ctx.restore(); }
@@ -988,9 +987,10 @@ function drawHUD(){
 function drawImp(){
   const x=VW-40, y=122+Math.sin(imp.bob*2)*4;
   impHead(x,y,19,imp.mood==='shock'?'shock':'grin');
-  if(imp.sayT>0){ ctx.save(); ctx.font='700 10px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; const w=ctx.measureText(imp.say).width+14;
-    rr(x-w-4,y-30,w,20,10); ctx.fillStyle='#fff'; ctx.strokeStyle=COL.purpleLt; ctx.lineWidth=1.5; ctx.fill(); ctx.stroke();
-    ctx.fillStyle=COL.ink; ctx.fillText(imp.say,x-w/2-4,y-16); ctx.restore(); }
+  if(imp.sayT>0){ ctx.save(); ctx.font='700 10px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+    const w=ctx.measureText(imp.say).width+18, bx=x-w-4, by=y-32, bh=22;   // bubble sits above-left of the imp
+    rr(bx,by,w,bh,11); ctx.fillStyle='#fff'; ctx.strokeStyle=COL.purpleLt; ctx.lineWidth=1.5; ctx.fill(); ctx.stroke();
+    ctx.fillStyle=COL.ink; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(imp.say,bx+w/2,by+bh/2+0.5); ctx.restore(); }
 }
 function drawToasts(){
   ctx.textAlign='center';
