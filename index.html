@@ -684,26 +684,13 @@ function completeLevel(){
 /* ============================ RENDER ============================ */
 function rr(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
-/* ---- Sezzle "S" logo mark (two interlocking petals, brand gradient) ---- */
-function petalPath(){ // unit teardrop: round bulb up (y≈-1), pointed tail down (y=+1)
-  ctx.beginPath(); ctx.moveTo(0,1);
-  ctx.quadraticCurveTo(-0.74,0.35,-0.62,-0.45);
-  ctx.arc(0,-0.45,0.62,Math.PI,0,false);
-  ctx.quadraticCurveTo(0.74,0.35,0,1); ctx.closePath();
-}
+/* ---- Sezzle "S" logo mark — traced from the official Sezzle logo (two petals, brand gradient) ---- */
+const SEZ_WARM_P=new Path2D("M0.286 -0.478L0.404 -0.478L0.478 -0.463L0.576 -0.42L0.635 -0.38L0.682 -0.337L0.745 -0.255L0.784 -0.165L0.8 -0.106L0.804 0.043L0.792 0.106L0.745 0.216L0.671 0.314L0.416 0.573L-0.016 1L-0.059 0.957L-0.102 0.89L-0.129 0.827L-0.149 0.741L-0.153 0.647L-0.129 0.522L-0.075 0.412L-0.035 0.361L0.004 0.325L0.024 0.286L0.024 0.137L-0.024 -0.173L-0.02 -0.286L-0.008 -0.318L0.086 -0.404L0.149 -0.439L0.243 -0.471L0.286 -0.478L0.404 -0.478L0.478 -0.463L0.529 -0.443L0.635 -0.38L0.682 -0.337L0.745 -0.255L0.784 -0.165L0.804 -0.071L0.804 0.043L0.792 0.106L0.745 0.216L0.671 0.314L0.008 0.98L-0.016 1L-0.039 0.98L-0.086 0.918L-0.129 0.827L-0.149 0.741L-0.153 0.647L-0.141 0.565L-0.11 0.475L-0.075 0.412L-0.035 0.361L0.004 0.325L0.024 0.286L0.024 0.137L-0.024 -0.173L-0.02 -0.286L-0.008 -0.318L0.059 -0.384L0.098 -0.412L0.2 -0.459L0.282 -0.475Z");
+const SEZ_COOL_P=new Path2D("M0.016 -1L0.043 -0.976L0.078 -0.929L0.118 -0.855L0.145 -0.761L0.153 -0.647L0.141 -0.565L0.102 -0.459L0.047 -0.376L-0.012 -0.318L-0.027 -0.267L-0.024 -0.133L0.016 0.102L0.024 0.192L0.02 0.286L0 0.325L-0.051 0.376L-0.118 0.424L-0.188 0.455L-0.243 0.471L-0.282 0.478L-0.404 0.478L-0.522 0.447L-0.6 0.404L-0.651 0.365L-0.702 0.314L-0.757 0.231L-0.792 0.137L-0.8 0.094L-0.804 -0.039L-0.773 -0.161L-0.741 -0.224L-0.702 -0.278L0.02 -1L0.078 -0.929L0.118 -0.855L0.145 -0.761L0.153 -0.647L0.141 -0.565L0.102 -0.459L0.047 -0.376L-0.012 -0.318L-0.027 -0.267L-0.024 -0.133L0.016 0.102L0.024 0.192L0.02 0.286L0 0.325L-0.051 0.376L-0.118 0.424L-0.188 0.455L-0.243 0.471L-0.282 0.478L-0.404 0.478L-0.522 0.447L-0.6 0.404L-0.651 0.365L-0.702 0.314L-0.757 0.231L-0.792 0.137L-0.8 0.094L-0.804 -0.039L-0.773 -0.161L-0.741 -0.224L-0.702 -0.278L0.012 -0.996Z");
 function drawSezzleLogo(cx,cy,s,rot){
-  ctx.save(); ctx.translate(cx,cy); if(rot) ctx.rotate(rot);
-  const px=0.22*s, py=0.28*s, sx=0.60*s, sy=0.80*s, tilt=0.36;
-  // top-left petal: green -> mauve
-  ctx.save(); ctx.translate(-px,-py); ctx.rotate(tilt); ctx.scale(sx,sy);
-  petalPath(); let g=ctx.createLinearGradient(-0.5,-1,0.3,1);
-  g.addColorStop(0,SEZ.greenLt); g.addColorStop(0.5,SEZ.green); g.addColorStop(1,SEZ.mauve);
-  ctx.fillStyle=g; ctx.fill(); ctx.restore();
-  // bottom-right petal: yellow -> orange -> pink (pink meets the mauve at centre)
-  ctx.save(); ctx.translate(px,py); ctx.rotate(tilt+Math.PI); ctx.scale(sx,sy);
-  petalPath(); let g2=ctx.createLinearGradient(-0.5,-1,0.3,1);
-  g2.addColorStop(0,SEZ.yellow); g2.addColorStop(0.5,SEZ.orange); g2.addColorStop(1,SEZ.pink);
-  ctx.fillStyle=g2; ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(cx,cy); if(rot) ctx.rotate(rot); ctx.scale(s,s);
+  let g=ctx.createLinearGradient(0,-0.478,0,1); g.addColorStop(0,"#fa9687"); g.addColorStop(0.5,"#ff5f71"); g.addColorStop(1,"#fec047"); ctx.fillStyle=g; ctx.fill(SEZ_WARM_P);
+  let g2=ctx.createLinearGradient(0,-1,0,0.478); g2.addColorStop(0,"#72e8c6"); g2.addColorStop(0.5,"#04bb79"); g2.addColorStop(1,"#a648d2"); ctx.fillStyle=g2; ctx.fill(SEZ_COOL_P);
   ctx.restore();
 }
 
