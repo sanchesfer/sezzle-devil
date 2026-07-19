@@ -707,10 +707,20 @@ function rr(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y
 /* ---- Sezzle "S" logo mark — traced from the official Sezzle logo (two petals, brand gradient) ---- */
 const SEZ_WARM_P=new Path2D("M0.286 -0.478L0.404 -0.478L0.478 -0.463L0.576 -0.42L0.635 -0.38L0.682 -0.337L0.745 -0.255L0.784 -0.165L0.8 -0.106L0.804 0.043L0.792 0.106L0.745 0.216L0.671 0.314L0.416 0.573L-0.016 1L-0.059 0.957L-0.102 0.89L-0.129 0.827L-0.149 0.741L-0.153 0.647L-0.129 0.522L-0.075 0.412L-0.035 0.361L0.004 0.325L0.024 0.286L0.024 0.137L-0.024 -0.173L-0.02 -0.286L-0.008 -0.318L0.086 -0.404L0.149 -0.439L0.243 -0.471L0.286 -0.478L0.404 -0.478L0.478 -0.463L0.529 -0.443L0.635 -0.38L0.682 -0.337L0.745 -0.255L0.784 -0.165L0.804 -0.071L0.804 0.043L0.792 0.106L0.745 0.216L0.671 0.314L0.008 0.98L-0.016 1L-0.039 0.98L-0.086 0.918L-0.129 0.827L-0.149 0.741L-0.153 0.647L-0.141 0.565L-0.11 0.475L-0.075 0.412L-0.035 0.361L0.004 0.325L0.024 0.286L0.024 0.137L-0.024 -0.173L-0.02 -0.286L-0.008 -0.318L0.059 -0.384L0.098 -0.412L0.2 -0.459L0.282 -0.475Z");
 const SEZ_COOL_P=new Path2D("M0.016 -1L0.043 -0.976L0.078 -0.929L0.118 -0.855L0.145 -0.761L0.153 -0.647L0.141 -0.565L0.102 -0.459L0.047 -0.376L-0.012 -0.318L-0.027 -0.267L-0.024 -0.133L0.016 0.102L0.024 0.192L0.02 0.286L0 0.325L-0.051 0.376L-0.118 0.424L-0.188 0.455L-0.243 0.471L-0.282 0.478L-0.404 0.478L-0.522 0.447L-0.6 0.404L-0.651 0.365L-0.702 0.314L-0.757 0.231L-0.792 0.137L-0.8 0.094L-0.804 -0.039L-0.773 -0.161L-0.741 -0.224L-0.702 -0.278L0.02 -1L0.078 -0.929L0.118 -0.855L0.145 -0.761L0.153 -0.647L0.141 -0.565L0.102 -0.459L0.047 -0.376L-0.012 -0.318L-0.027 -0.267L-0.024 -0.133L0.016 0.102L0.024 0.192L0.02 0.286L0 0.325L-0.051 0.376L-0.118 0.424L-0.188 0.455L-0.243 0.471L-0.282 0.478L-0.404 0.478L-0.522 0.447L-0.6 0.404L-0.651 0.365L-0.702 0.314L-0.757 0.231L-0.792 0.137L-0.8 0.094L-0.804 -0.039L-0.773 -0.161L-0.741 -0.224L-0.702 -0.278L0.012 -0.996Z");
+// Bake the mark (with a soft glow) to an offscreen sprite ONCE, so every per-frame
+// draw is a single cheap drawImage — no per-frame gradients or shadowBlur. Per-frame
+// shadowBlur on this gradient path was tanking framerate on mobile near the (glowing) exit.
+const SEZ_BAKE=180, SEZ_LW=Math.ceil(1.98*SEZ_BAKE), SEZ_LH=Math.ceil(2.36*SEZ_BAKE);
+const SEZ_SPRITE=document.createElement('canvas'); SEZ_SPRITE.width=SEZ_LW; SEZ_SPRITE.height=SEZ_LH;
+(function(){ const c=SEZ_SPRITE.getContext('2d');
+  c.translate(SEZ_LW/2,SEZ_LH/2); c.scale(SEZ_BAKE,SEZ_BAKE);
+  c.shadowColor='rgba(131,51,212,0.4)'; c.shadowBlur=0.1;
+  let g=c.createLinearGradient(0,-0.478,0,1); g.addColorStop(0,"#fa9687"); g.addColorStop(0.5,"#ff5f71"); g.addColorStop(1,"#fec047"); c.fillStyle=g; c.fill(SEZ_WARM_P);
+  let g2=c.createLinearGradient(0,-1,0,0.478); g2.addColorStop(0,"#72e8c6"); g2.addColorStop(0.5,"#04bb79"); g2.addColorStop(1,"#a648d2"); c.fillStyle=g2; c.fill(SEZ_COOL_P);
+})();
 function drawSezzleLogo(cx,cy,s,rot){
-  ctx.save(); ctx.translate(cx,cy); if(rot) ctx.rotate(rot); ctx.scale(s,s);
-  let g=ctx.createLinearGradient(0,-0.478,0,1); g.addColorStop(0,"#fa9687"); g.addColorStop(0.5,"#ff5f71"); g.addColorStop(1,"#fec047"); ctx.fillStyle=g; ctx.fill(SEZ_WARM_P);
-  let g2=ctx.createLinearGradient(0,-1,0,0.478); g2.addColorStop(0,"#72e8c6"); g2.addColorStop(0.5,"#04bb79"); g2.addColorStop(1,"#a648d2"); ctx.fillStyle=g2; ctx.fill(SEZ_COOL_P);
+  ctx.save(); ctx.translate(cx,cy); if(rot) ctx.rotate(rot);
+  const k=s/SEZ_BAKE; ctx.drawImage(SEZ_SPRITE,-SEZ_LW/2*k,-SEZ_LH/2*k,SEZ_LW*k,SEZ_LH*k);
   ctx.restore();
 }
 
@@ -927,10 +937,8 @@ function glowLabel(x,y,text,color){ ctx.save(); ctx.font='800 12px system-ui,-ap
 function drawCoin(c){
   const fl=Math.sin(player.anim*4+c.x)*3; const y=c.y+fl;
   ctx.save();
-  // each installment is a Sezzle logo, gently bobbing with a soft brand glow
-  ctx.shadowColor='rgba(131,51,212,.5)'; ctx.shadowBlur=14;
+  // each installment is a Sezzle logo, gently bobbing (glow is baked into the sprite)
   drawSezzleLogo(c.x, y, c.r*1.45, Math.sin(player.anim*1.6+c.x)*0.12);
-  ctx.shadowBlur=0;
   // installment number badge above it
   ctx.fillStyle=SEZ.mauve; ctx.font='800 10px '+FONT; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   ctx.fillText(String(c.order+1), c.x, y-c.r*1.7-4);
@@ -941,9 +949,7 @@ function drawExit(e,open){
   ctx.save(); const cx=e.x+e.w/2, cy=e.y+e.h/2; const s=Math.min(e.w,e.h)*0.98;
   ctx.textAlign='center';
   if(open){
-    ctx.shadowColor='rgba(131,51,212,.6)'; ctx.shadowBlur=20;
-    drawSezzleLogo(cx,cy+Math.sin(player.anim*2)*3,s);   // gently bobbing logo
-    ctx.shadowBlur=0;
+    drawSezzleLogo(cx,cy+Math.sin(player.anim*2)*3,s);   // gently bobbing logo (glow is baked into the sprite)
   } else {
     ctx.globalAlpha=0.4; drawSezzleLogo(cx,cy-2,s*0.9); ctx.globalAlpha=1;
     ctx.fillStyle='#8a79ad'; ctx.font='800 12px '+FONT; ctx.fillText('🔒 '+L.coins.filter(c=>c.collected).length+'/'+L.coins.length,cx,cy+e.h/2+4);
