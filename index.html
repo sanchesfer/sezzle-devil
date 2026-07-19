@@ -734,10 +734,12 @@ function drawParallax(){
   ctx.fillStyle='rgba(255,255,255,0.94)';
   const off2=-camX*0.3;
   for(let i=0;i<7;i++){ const cx=((off2+i*185)%(VW+220)+VW+220)%(VW+220)-110; const cy=84+((i*53)%150); cloud(cx,cy,24+(i%3)*8); }
-  // Sezzleville sign
+  // town sign (background flavour) — flanked by stars, sized to the text
   const sx=-camX*0.4+130;
   ctx.save(); ctx.globalAlpha=0.92; ctx.fillStyle=COL.purpleLt; ctx.font='800 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.textAlign='center'; ctx.letterSpacing='1px';
-  drawLeaf(sx-8,147,8,'#E0576A'); ctx.fillText('SEZZLEVILLE, CANADA', sx+140, 152); drawLeaf(sx+288,147,8,'#E0576A');
+  const town='SPLITSVILLE'; const tw=ctx.measureText(town).width;
+  ctx.fillText(town, sx+140, 152);
+  drawStar(sx+140-tw/2-16,147,7,COL.amber); drawStar(sx+140+tw/2+16,147,7,COL.amber);
   ctx.letterSpacing='0px'; ctx.restore();
 }
 function hills(off,y,r,color){ ctx.fillStyle=color; for(let i=-1;i<6;i++){ const bx=off+i*r*1.35; ctx.beginPath(); ctx.arc(bx+r*0.68,y,r,Math.PI,0); ctx.fill(); } }
