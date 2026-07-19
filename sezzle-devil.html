@@ -188,7 +188,7 @@ const LEVEL_FACTORIES=[
     trapdoors:[], fakes:[], hidden:[], movers:[], shovers:[],
     spikes:[ SP(700,70,'HIDDEN FEE'), SP(900,110,'HIDDEN FEE'), SP(1200,70,'HIDDEN FEE'), SP(1420,70,'HIDDEN FEE'), SP(1600,70,'HIDDEN FEE') ],
     lava:[],
-    coins:[ C(200,648,0), C(935,560,1), C(1355,560,2), C(1750,648,3) ],
+    coins:[ C(200,648,0), C(485,520,1), C(935,560,2), C(1355,560,3), C(1750,648,4) ],   // Pay in 5
     card:null, dash:null, puck:PUCK(490,498), compliance:CMP(1650,648),
     checkpoints:[ CP(1050) ], exit:EX(1850), tips:DTIPS }),
 
@@ -209,7 +209,7 @@ const LEVEL_FACTORIES=[
       P(1310,640,70,22), P(1460,640,70,22), P(1610,640,70,22), P(1760,640,70,22) ],
     trapdoors:[], fakes:[ FK(360,650,80,'SURPRISE INTEREST'), FK(600,600,340,'SURPRISE INTEREST') ],
     hidden:[], movers:[], shovers:[], spikes:[], lava:[ LV(500,742,1400,70) ],
-    coins:[ C(200,648,0), C(430,648,1), C(895,600,2), C(1785,600,3) ],
+    coins:[ C(200,648,0), C(430,648,1), C(895,600,2), C(1615,600,3), C(1785,600,4) ],   // Pay in 5
     card:null, dash:null, puck:PUCK(1385,580), compliance:CMP(2000,648),
     checkpoints:[ CP(450), CP(1950) ], exit:EX(2050), tips:DTIPS }),
 
@@ -254,7 +254,7 @@ const LEVEL_FACTORIES=[
     trapdoors:[], fakes:[ FK(1220,620,80,'SURPRISE INTEREST'), FK(1430,620,80,'SURPRISE INTEREST') ],
     hidden:[], movers:[ MV(600,610,120,22,'x',60,1.5) ], shovers:[], spikes:[],
     lava:[ LV(560,742,200,70), LV(1200,742,360,70) ],
-    coins:[ C(200,648,0), C(640,560,1), C(1000,560,2), C(1360,540,3) ],
+    coins:[ C(200,648,0), C(640,560,1), C(1000,560,2), C(1360,540,3), C(1750,648,4) ],   // Pay in 5
     card:null, dash:null, puck:PUCK(1365,470), compliance:CMP(2100,648),
     checkpoints:[ CP(790), CP(1580) ], exit:EX(2000), tips:DTIPS }),
 
@@ -625,7 +625,7 @@ function update(dt){
       spawnBurst(c.x,c.y,COL.green,16);
       // streak: in-order builds it
       if(c.order===streak){ streak++; combo++; comboFlash=0.6;
-        if(streak>=4 && !streakRewarded){ streakRewarded=true; sfx.levelup();
+        if(streak>=L.coins.length && !streakRewarded){ streakRewarded=true; sfx.levelup();
           score+=500; addToast('⬆️ Perfect on-time streak! +500', COL.green);
           spawnBurst(player.x+P_W/2,player.y,COL.green,26);
         }
@@ -633,7 +633,7 @@ function update(dt){
       score+=100+streak*25+combo*15;
       const got=L.coins.filter(x=>x.collected).length;
       addToast('Installment '+got+'/'+L.coins.length+' paid 🟣',COL.purple);
-      if(got===L.coins.length){ addToast('All 4 paid — exit portal OPEN! 🌀',COL.purple); }
+      if(got===L.coins.length){ addToast('All '+L.coins.length+' paid — exit portal OPEN! 🌀',COL.purple); }
     }
   }
   if(L.puck && !L.puck.collected){
@@ -684,7 +684,7 @@ function update(dt){
   }
   if(overlap(pb,L.exit)){
     if(open){ completeLevel(); return; }
-    else if(imp.sayT<=0){ addToast(coinsDone&&!compliant?'File your Québec compliance form first! ⚜️':'Collect all 4 installments first! 🟣',COL.amber); imp.sayT=1; }
+    else if(imp.sayT<=0){ addToast(coinsDone&&!compliant?'File your Québec compliance form first! ⚜️':'Collect all '+L.coins.length+' installments first! 🟣',COL.amber); imp.sayT=1; }
   }
 
   // camera
@@ -926,46 +926,33 @@ function glowLabel(x,y,text,color){ ctx.save(); ctx.font='800 12px system-ui,-ap
   ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.fillText(text,x,y-2); ctx.restore(); }
 function drawCoin(c){
   const fl=Math.sin(player.anim*4+c.x)*3; const y=c.y+fl;
-  ctx.save(); ctx.shadowColor=COL.purpleLt; ctx.shadowBlur=16;
-  ctx.fillStyle='#4a2f78'; ctx.beginPath(); ctx.arc(c.x,y,c.r+1.5,0,7); ctx.fill();
-  const g=ctx.createRadialGradient(c.x-4,y-5,2,c.x,y,c.r); g.addColorStop(0,'#c9b1ec'); g.addColorStop(0.6,'#8B6FBF'); g.addColorStop(1,'#5B3F8C');
-  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(c.x,y,c.r,0,7); ctx.fill();
+  ctx.save();
+  // each installment is a Sezzle logo, gently bobbing with a soft brand glow
+  ctx.shadowColor='rgba(131,51,212,.5)'; ctx.shadowBlur=14;
+  drawSezzleLogo(c.x, y, c.r*1.45, Math.sin(player.anim*1.6+c.x)*0.12);
   ctx.shadowBlur=0;
-  ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(c.x,y,c.r-3,0,7); ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(c.x-c.r*0.35,y-c.r*0.42,c.r*0.3,c.r*0.16,-0.6,0,7); ctx.fill();
-  ctx.fillStyle='#fff'; ctx.font='800 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('$',c.x,y+1); ctx.textBaseline='alphabetic';
-  ctx.fillStyle=COL.amber; ctx.font='800 9px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText(String(c.order+1),c.x,y-c.r-4);
-  ctx.restore();
+  // installment number badge above it
+  ctx.fillStyle=SEZ.mauve; ctx.font='800 10px '+FONT; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillText(String(c.order+1), c.x, y-c.r*1.7-4);
+  ctx.textAlign='left'; ctx.restore();
 }
 function drawExit(e,open){
-  // portal — the Sezzle logo mark itself
-  ctx.save(); const cx=e.x+e.w/2, cy=e.y+e.h/2; const s=Math.min(e.w,e.h)*0.92;
+  // portal — just the Sezzle logo mark (open = vivid + glow + bob; locked = dimmed + count)
+  ctx.save(); const cx=e.x+e.w/2, cy=e.y+e.h/2; const s=Math.min(e.w,e.h)*0.98;
   ctx.textAlign='center';
   if(open){
-    // radiant halo rings in brand colours
-    ctx.shadowColor=SEZ.mauve; ctx.shadowBlur=22;
-    for(let i=3;i>=0;i--){ ctx.globalAlpha=0.14+i*0.08; const rad=(e.w/2+6)-(i*5)+Math.sin(player.anim*3+i)*2;
-      ctx.strokeStyle=i%2?SEZ.mauve:SEZ.green; ctx.lineWidth=3; ctx.beginPath(); ctx.ellipse(cx,cy,rad,e.h/2-2,0,0,7); ctx.stroke(); }
-    ctx.globalAlpha=1; ctx.shadowColor='rgba(131,51,212,.5)'; ctx.shadowBlur=16;
+    ctx.shadowColor='rgba(131,51,212,.6)'; ctx.shadowBlur=20;
     drawSezzleLogo(cx,cy+Math.sin(player.anim*2)*3,s);   // gently bobbing logo
-    ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.font='800 12px '+FONT; ctx.fillText('EXIT',cx,e.y-4);
+    ctx.shadowBlur=0;
   } else {
-    // locked: dimmed logo + remaining count
-    ctx.globalAlpha=0.38; drawSezzleLogo(cx,cy-4,s*0.86); ctx.globalAlpha=1;
-    ctx.fillStyle='#8a79ad'; ctx.font='800 12px '+FONT; ctx.fillText('🔒 '+L.coins.filter(c=>c.collected).length+'/'+L.coins.length,cx,cy+e.h/2-2);
+    ctx.globalAlpha=0.4; drawSezzleLogo(cx,cy-2,s*0.9); ctx.globalAlpha=1;
+    ctx.fillStyle='#8a79ad'; ctx.font='800 12px '+FONT; ctx.fillText('🔒 '+L.coins.filter(c=>c.collected).length+'/'+L.coins.length,cx,cy+e.h/2+4);
   }
-  ctx.textAlign='left'; ctx.restore();
-  // finish flag planted on the ground beside the portal (Canada easter egg 🍁)
-  const fx=e.x+e.w+14, ftop=FLOOR-72, wav=Math.sin(player.anim*3)*2;
-  ctx.fillStyle='#8a79ad'; ctx.fillRect(fx,ftop,4,72);
-  ctx.fillStyle=open?COL.green:'#c9bce0';
-  ctx.beginPath(); ctx.moveTo(fx+4,ftop); ctx.lineTo(fx+36,ftop+10+wav); ctx.lineTo(fx+4,ftop+20); ctx.closePath(); ctx.fill();
-  drawLeaf(fx+16,ftop+10+wav,7,'#fff');
   // once you've learned the fake denial, Sezzle stamps you APPROVED
-  if(L.denial && denialKnown){ ctx.save(); ctx.font='800 10px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.textAlign='center';
+  if(L.denial && denialKnown){ ctx.font='800 10px '+FONT;
     const t='SEZZLE ✓ APPROVED', w=ctx.measureText(t).width+14; ctx.shadowColor=COL.green; ctx.shadowBlur=10;
-    rr(cx-w/2,e.y-32,w,17,8); ctx.fillStyle=COL.green; ctx.fill(); ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.fillText(t,cx,e.y-20); ctx.restore(); ctx.textAlign='left'; }
+    rr(cx-w/2,e.y-32,w,17,8); ctx.fillStyle=COL.green; ctx.fill(); ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.fillText(t,cx,e.y-20); }
+  ctx.textAlign='left'; ctx.restore();
 }
 function drawPlayer(){
   const cx=player.x+P_W/2, by=player.y+P_H;
@@ -1128,8 +1115,9 @@ function drawClear(){
   drawConfetti();
   ctx.textAlign='center';
   ctx.fillStyle='#fff'; ctx.font='900 34px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.letterSpacing='1px'; ctx.fillText('LEVEL CLEAR!',VW/2,VH/2-90); ctx.letterSpacing='0px';
-  for(let i=0;i<4;i++){ const cc={x:VW/2-63+i*42,y:VH/2-22,r:15,order:i}; drawCoin(cc); }
-  ctx.font='700 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillStyle=COL.amber; ctx.textAlign='center'; ctx.fillText('Paid in 4. No fees. No interest.',VW/2,VH/2+26);
+  const nC=L.coins.length, cw=44, x0=VW/2-(nC-1)*cw/2;
+  for(let i=0;i<nC;i++){ const cc={x:x0+i*cw,y:VH/2-22,r:15,order:i}; drawCoin(cc); }
+  ctx.font='700 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillStyle=COL.amber; ctx.textAlign='center'; ctx.fillText('Paid in '+nC+'. No fees. No interest.',VW/2,VH/2+26);
   ctx.fillStyle='#fff'; ctx.font='800 18px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Score: '+(totalScore).toLocaleString(),VW/2,VH/2+60);
   button(levelIdx>=LEVEL_COUNT-1?'FINISH':'NEXT LEVEL ▶',VH/2+92,COL.green);
   ctx.textAlign='left';
@@ -1146,7 +1134,7 @@ function drawWin(){
   ctx.fillStyle=COL.amber; ctx.font='900 40px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('THE DEVIL!',VW/2,308+TY);
   ctx.letterSpacing='0px';
   ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('You paid the Sezzle way: 4 payments,',VW/2,356+TY);
+  ctx.fillText('You paid the Sezzle way — on time,',VW/2,356+TY);
   ctx.fillText('0% interest, no hidden or late fees.',VW/2,378+TY);
   if(hardMode){ ctx.fillStyle=COL.amber; ctx.font='800 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('...and you survived QUÉBEC compliance!',VW/2,404+TY); }
   ctx.fillStyle='#fff'; ctx.font='800 26px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Final Score',VW/2,440+TY);
