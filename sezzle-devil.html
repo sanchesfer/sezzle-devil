@@ -26,7 +26,7 @@
     width:78px; height:78px; border-radius:22px; border:none;
     display:flex; align-items:center; justify-content:center;
     font-size:34px; color:#fff; font-weight:800;
-    background:rgba(91,63,140,.72); backdrop-filter:blur(4px);
+    background:rgba(91,63,140,.9);
     box-shadow:0 6px 18px rgba(0,0,0,.25); touch-action:none; user-select:none;
   }
   .btn:active,.btn.on{ background:rgba(139,111,191,.95); transform:scale(.94); }
@@ -52,7 +52,8 @@
 "use strict";
 (function(){
 /* ============================ CONSTANTS ============================ */
-const VW=450, VH=800;          // virtual portrait resolution
+const VW=450, VH_BASE=800;     // virtual portrait resolution (VW fixed; VH adapts on phones)
+let VH=VH_BASE;                // actual virtual height — grows on tall touch screens to fill the viewport
 const FLOOR=700;               // top of ground
 const P_W=28, P_H=36;
 const GRAV_UP=2100, GRAV_DOWN=2850, MAX_FALL=1350;
@@ -71,20 +72,42 @@ function trapLabel(s){ return hardMode && FR[s] ? FR[s] : s; }
 const canvas=document.getElementById('c');
 const ctx=canvas.getContext('2d');
 let dpr=1, cssW=VW, cssH=VH, cssLeft=0, cssTop=0;
+let skyGrad=null;
+function buildSky(){                            // cache the full-screen sky gradient (rebuilt on resize, not per frame)
+  skyGrad=ctx.createLinearGradient(0,0,0,VH);
+  skyGrad.addColorStop(0,'#FBF8FF'); skyGrad.addColorStop(0.5,'#EFE8FB'); skyGrad.addColorStop(1,'#DFD1F3');
+}
 function resize(){
   const w=window.innerWidth, h=window.innerHeight;
   const isTouch=(window.matchMedia && window.matchMedia('(pointer:coarse)').matches) || ('ontouchstart' in window);
-  const reserve=isTouch?150:0;                 // leave room below the canvas for the control buttons
-  const availH=h-reserve;
-  const scale=Math.min(w/VW, availH/VH);
-  cssW=Math.round(VW*scale); cssH=Math.round(VH*scale);
-  dpr=Math.min(window.devicePixelRatio||1, 2.5);
+  dpr=Math.min(window.devicePixelRatio||1, 2);
+  if(isTouch){
+    // Fill the viewport width when possible, but never let the play floor slip
+    // under the controls or the canvas overflow the viewport height. RB is the
+    // control band (button height + bottom inset + safe-area) that must stay
+    // below FLOOR. scale = min(fill-width, fit-height-with-reserve):
+    //  - tall portrait phones -> width binds -> full-bleed, big underground band
+    //  - short 16:9 phones    -> reserve binds -> slight side bars, floor clears
+    //  - wide/landscape touch  -> reserve binds -> letterboxed, gameplay visible
+    const RB=140;
+    const scale=Math.min(w/VW, (h-RB)/FLOOR);
+    VH=Math.max(VH_BASE, Math.min(1180, Math.round(h/scale)));
+    cssW=Math.round(VW*scale); cssH=Math.round(VH*scale);
+    canvas.style.left='50%'; canvas.style.transform='translateX(-50%)';
+    canvas.style.top=Math.round((h-cssH)/2)+'px';   // ~0 in the common (full-bleed) case
+  } else {
+    // Desktop: fixed 450x800, letterboxed and centered (unchanged).
+    VH=VH_BASE;
+    const scale=Math.min(w/VW, h/VH);
+    cssW=Math.round(VW*scale); cssH=Math.round(VH*scale);
+    canvas.style.left='50%'; canvas.style.transform='translateX(-50%)';
+    canvas.style.top=Math.max(0,Math.round((h-cssH)/2))+'px';
+  }
   canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
-  canvas.style.left='50%'; canvas.style.transform='translateX(-50%)';
-  canvas.style.top=Math.max(0,Math.round((availH-cssH)/2))+'px';
   canvas.width=Math.round(VW*dpr); canvas.height=Math.round(VH*dpr);
   const r=canvas.getBoundingClientRect(); cssLeft=r.left; cssTop=r.top;
   ctx.setTransform(dpr,0,0,dpr,0,0);
+  buildSky();
 }
 window.addEventListener('resize',resize);
 window.addEventListener('orientationchange',()=>setTimeout(resize,200));
@@ -697,10 +720,9 @@ function drawTrophy(x,y,s,color){ ctx.save(); ctx.translate(x,y);
   ctx.fillStyle='rgba(255,255,255,.4)'; ctx.beginPath(); ctx.moveTo(-s*.26,-s*.48); ctx.lineTo(-s*.02,-s*.48); ctx.lineTo(-s*.12,-s*.12); ctx.closePath(); ctx.fill(); ctx.restore(); }
 
 function drawParallax(){
-  // sky
-  const g=ctx.createLinearGradient(0,0,0,VH);
-  g.addColorStop(0,'#FBF8FF'); g.addColorStop(0.5,'#EFE8FB'); g.addColorStop(1,'#DFD1F3');
-  ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+  // sky (cached gradient — see buildSky)
+  if(!skyGrad) buildSky();
+  ctx.fillStyle=skyGrad; ctx.fillRect(0,0,VW,VH);
   // soft bokeh orbs
   for(let i=0;i<6;i++){ const bx=((-camX*0.1+i*150)%(VW+180)+VW+180)%(VW+180)-90; const by=110+((i*97)%380);
     ctx.globalAlpha=0.05; ctx.fillStyle=i%2?COL.purpleLt:COL.purple; ctx.beginPath(); ctx.arc(bx,by,54+(i%3)*30,0,7); ctx.fill(); }
@@ -759,7 +781,7 @@ function drawWorld(){
   for(const t of L.trapdoors){
     if(!t.dropped){
       const gd=ctx.createLinearGradient(0,FLOOR,0,FLOOR+120); gd.addColorStop(0,COL.purple); gd.addColorStop(1,'#48306f');
-      ctx.fillStyle=gd; ctx.fillRect(t.x,FLOOR,t.w,120);
+      ctx.fillStyle=gd; ctx.fillRect(t.x,FLOOR,t.w,Math.max(120,VH-FLOOR+40));
       ctx.fillStyle='rgba(255,255,255,.16)'; ctx.fillRect(t.x,FLOOR,t.w,3);
       if(t.known){
         ctx.strokeStyle=COL.amber; ctx.setLineDash([5,4]); ctx.lineWidth=2;
@@ -844,9 +866,11 @@ function drawWorld(){
 }
 function drawPlat(p,color){
   if(p.kind==='ground'){
-    // flat, square-cornered so contiguous floor tiles seamlessly (traps leave no seam)
+    // flat, square-cornered so contiguous floor tiles seamlessly (traps leave no seam).
+    // Fill extends to the bottom of the (possibly taller) canvas so no sky shows under the floor.
+    const gh=Math.max(p.h, VH-p.y+40);
     const g=ctx.createLinearGradient(0,p.y,0,p.y+p.h); g.addColorStop(0,color); g.addColorStop(1,'#48306f');
-    ctx.fillStyle=g; ctx.fillRect(p.x,p.y,p.w,p.h);
+    ctx.fillStyle=g; ctx.fillRect(p.x,p.y,p.w,gh);
     ctx.fillStyle='rgba(255,255,255,.16)'; ctx.fillRect(p.x,p.y,p.w,3);
   } else {
     ctx.save(); ctx.shadowColor='rgba(74,48,117,.35)'; ctx.shadowBlur=8; ctx.shadowOffsetY=4;
@@ -998,29 +1022,30 @@ function iconButton(label,y,color,which,iconFn){
   ctx.textBaseline='alphabetic'; ctx.textAlign='left';
 }
 function drawTitle(){
+  const TY=(VH-VH_BASE)/2;   // vertically centre the 800-tall layout on taller (phone) canvases
   const g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#6b4aa3'); g.addColorStop(1,'#2c1e4c'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
   // radial glow behind hero
-  ctx.save(); const rg=ctx.createRadialGradient(VW/2,240,20,VW/2,240,250); rg.addColorStop(0,'rgba(139,111,191,.55)'); rg.addColorStop(1,'rgba(139,111,191,0)'); ctx.fillStyle=rg; ctx.fillRect(0,90,VW,380); ctx.restore();
+  ctx.save(); const rg=ctx.createRadialGradient(VW/2,240+TY,20,VW/2,240+TY,250); rg.addColorStop(0,'rgba(139,111,191,.55)'); rg.addColorStop(1,'rgba(139,111,191,0)'); ctx.fillStyle=rg; ctx.fillRect(0,90+TY,VW,380); ctx.restore();
   ctx.textAlign='center';
   // floating imps
-  for(let i=0;i<5;i++){ const x=55+i*82, y=690+Math.sin(perf/600+i)*14; ctx.globalAlpha=0.35; impHead(x,y,12,'grin'); } ctx.globalAlpha=1;
+  for(let i=0;i<5;i++){ const x=55+i*82, y=690+TY+Math.sin(perf/600+i)*14; ctx.globalAlpha=0.35; impHead(x,y,12,'grin'); } ctx.globalAlpha=1;
   // hero imp
-  impHead(VW/2,160+Math.sin(perf/500)*8,52,'grin');
+  impHead(VW/2,160+TY+Math.sin(perf/500)*8,52,'grin');
   // title
   ctx.letterSpacing='2px';
-  ctx.fillStyle='#fff'; ctx.font='900 46px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('SEZZLE',VW/2,270);
-  ctx.fillStyle=COL.amber; ctx.fillText('DEVIL',VW/2,318);
+  ctx.fillStyle='#fff'; ctx.font='900 46px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('SEZZLE',VW/2,270+TY);
+  ctx.fillStyle=COL.amber; ctx.fillText('DEVIL',VW/2,318+TY);
   ctx.letterSpacing='0px';
   ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='600 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('Beat the devil of paying the old way.',VW/2,356);
+  ctx.fillText('Beat the devil of paying the old way.',VW/2,356+TY);
   ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('Pick your region — same 10 levels, more pain', VW/2,380);
-  iconButton('USA · EASY',410,COL.green,1,(x,y)=>drawStar(x,y,11,'#fff'));
-  iconButton('CANADA · MEDIUM',470,COL.purple,2,(x,y)=>drawLeaf(x,y,11,'#fff'));
-  iconButton('QUÉBEC · BRUTAL',530,COL.red,3,(x,y)=>drawFleur(x,y,16,'#fff'));
+  ctx.fillText('Pick your region — same 10 levels, more pain', VW/2,380+TY);
+  iconButton('USA · EASY',410+TY,COL.green,1,(x,y)=>drawStar(x,y,11,'#fff'));
+  iconButton('CANADA · MEDIUM',470+TY,COL.purple,2,(x,y)=>drawLeaf(x,y,11,'#fff'));
+  iconButton('QUÉBEC · BRUTAL',530+TY,COL.red,3,(x,y)=>drawFleur(x,y,16,'#fff'));
   ctx.textAlign='center';
   ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('Québec: harder traps · en français · + compliance', VW/2,600);
+  ctx.fillText('Québec: harder traps · en français · + compliance', VW/2,600+TY);
   ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='700 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
   const cr='Powered by Sezzle · Sezzleville, Canada'; ctx.fillText(cr,VW/2,VH-24);
   drawLeaf(VW/2+ctx.measureText(cr).width/2+10,VH-27,6,'#E0576A');
@@ -1053,21 +1078,22 @@ function drawClear(){
   ctx.textAlign='left';
 }
 function drawWin(){
+  const TY=(VH-VH_BASE)/2;   // vertically centre the 800-tall layout on taller (phone) canvases
   const g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#6b4aa3'); g.addColorStop(1,'#2a1d47'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
   drawConfetti();
   ctx.textAlign='center';
-  ctx.save(); ctx.shadowColor=COL.amber; ctx.shadowBlur=20; drawTrophy(VW/2,168,64,COL.amber); ctx.restore();
+  ctx.save(); ctx.shadowColor=COL.amber; ctx.shadowBlur=20; drawTrophy(VW/2,168+TY,64,COL.amber); ctx.restore();
   ctx.letterSpacing='1px';
-  ctx.fillStyle='#fff'; ctx.font='900 36px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('YOU BEAT',VW/2,262);
-  ctx.fillStyle=COL.amber; ctx.font='900 40px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('THE DEVIL!',VW/2,308);
+  ctx.fillStyle='#fff'; ctx.font='900 36px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('YOU BEAT',VW/2,262+TY);
+  ctx.fillStyle=COL.amber; ctx.font='900 40px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('THE DEVIL!',VW/2,308+TY);
   ctx.letterSpacing='0px';
   ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('You paid the Sezzle way: 4 payments,',VW/2,356);
-  ctx.fillText('0% interest, no hidden or late fees.',VW/2,378);
-  if(hardMode){ ctx.fillStyle=COL.amber; ctx.font='800 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('...and you survived QUÉBEC compliance!',VW/2,404); }
-  ctx.fillStyle='#fff'; ctx.font='800 26px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Final Score',VW/2,440);
-  ctx.fillStyle=COL.green; ctx.font='900 44px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText(totalScore.toLocaleString(),VW/2,486);
-  button('PLAY AGAIN ↻',540,COL.green);
+  ctx.fillText('You paid the Sezzle way: 4 payments,',VW/2,356+TY);
+  ctx.fillText('0% interest, no hidden or late fees.',VW/2,378+TY);
+  if(hardMode){ ctx.fillStyle=COL.amber; ctx.font='800 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('...and you survived QUÉBEC compliance!',VW/2,404+TY); }
+  ctx.fillStyle='#fff'; ctx.font='800 26px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Final Score',VW/2,440+TY);
+  ctx.fillStyle=COL.green; ctx.font='900 44px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText(totalScore.toLocaleString(),VW/2,486+TY);
+  button('PLAY AGAIN ↻',540+TY,COL.green);
   ctx.fillStyle='rgba(255,255,255,.7)'; ctx.font='700 13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Powered by Sezzle · Sezzleville, Canada 🍁',VW/2,VH-30);
   ctx.textAlign='left';
 }
