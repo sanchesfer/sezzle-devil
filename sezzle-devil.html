@@ -190,7 +190,7 @@ const LEVEL_FACTORIES=[
     lava:[],
     coins:[ C(200,648,0), C(485,520,1), C(935,560,2), C(1355,560,3), C(1750,648,4) ],   // Pay in 5
     card:null, dash:null, puck:PUCK(490,498), compliance:CMP(1650,648),
-    checkpoints:[ CP(1050) ], exit:EX(1850), tips:DTIPS }),
+    checkpoints:[ CP(1050) ], exit:EX(1850), invert:true, tips:DTIPS }),
 
   // L3 — Bridge Over Troubled Debt (easy): Virtual Card reveals a bridge; the mid-canyon "dare" stone is a fake
   ()=>({ name:'Level 3 · Bridge Over Troubled Debt', worldW:2100, spawn:{x:60,y:FLOOR-P_H},
@@ -233,7 +233,7 @@ const LEVEL_FACTORIES=[
     lava:[ LV(560,762,1100,70) ],
     coins:[ C(200,648,0), C(470,560,1), C(1100,600,2), C(1750,648,3) ],
     card:null, dash:DASH(445,560), puck:PUCK(1080,520), compliance:CMP(2050,648),
-    checkpoints:[ CP(540) ], exit:EX(2100), denial:true, tips:DTIPS }),
+    checkpoints:[ CP(540) ], exit:EX(2100), denial:true, invert:true, tips:DTIPS }),
 
   // L7 — Minimum Payment Climb (hard): MINIMUM PAYMENT shover walls; the "helpful boost" flings you wrong
   ()=>({ name:'Level 7 · Minimum Payment Climb', worldW:2300, spawn:{x:60,y:FLOOR-P_H},
@@ -269,7 +269,7 @@ const LEVEL_FACTORIES=[
     lava:[ LV(520,742,360,70), LV(1140,742,300,70), LV(1580,742,320,70), LV(1980,762,130,70) ],
     coins:[ C(200,648,0), C(600,540,1), C(1300,540,2), C(1830,540,3) ],
     card:CARD(1500,600), dash:DASH(2160,610), puck:PUCK(1300,470), compliance:CMP(2540,648),
-    checkpoints:[ CP(920), CP(2100) ], exit:EX(2600), denial:true, tips:DTIPS }),
+    checkpoints:[ CP(920), CP(2100) ], exit:EX(2600), denial:true, invert:true, tips:DTIPS }),
 
   // L10 — The Final Statement (climax): boss arena, all mechanics, dash the collapsing "PAID OFF" cascade
   ()=>({ name:'Level 10 · The Final Statement', worldW:3000, spawn:{x:60,y:FLOOR-P_H},
@@ -415,6 +415,7 @@ function loadLevel(n){
   resetSection(true);
   state='play'; showPads(true);
   imp.say='Bet you can\'t...'; imp.sayT=2.2; imp.mood='grin';
+  if(hardMode && L.invert){ addToast('⚜️ CONTRÔLES INVERSÉS — gauche ⇄ droite!', COL.red); imp.say='gauche? droite?! 😈'; imp.sayT=2.8; imp.mood='laugh'; }
 }
 function resetSection(full){
   player.x=cp.x; player.y=cp.y; player.vx=0; player.vy=0; player.grounded=false; player.onPlat=null;
@@ -512,7 +513,8 @@ function update(dt){
   // horizontal velocity — a minimum-payment shove overrides input briefly
   if(shove.t>0){ shove.t-=dt; player.vx=shove.vx; player.face=shove.vx>0?1:-1; }
   else {
-    const dir=(input.right?1:0)-(input.left?1:0);
+    let dir=(input.right?1:0)-(input.left?1:0);
+    if(hardMode && L.invert) dir=-dir;   // Québec twist: left/right swapped on flagged levels
     const spd=MOVE*(dashT>0?1.9:1);
     player.vx=dir*spd;
     if(dir!==0) player.face=dir;
@@ -996,7 +998,7 @@ function drawHUD(){
   // small Sezzle logo mark, top-left brand accent
   drawSezzleLogo(26,26,15);
   // level name — bigger, auto-shrinks so long names never overflow
-  const nm=L.name+(hardMode?' · Québec':'');
+  const nm=L.name+(hardMode?' · Québec':'')+((hardMode&&L.invert)?' ⇄':'');
   let ns=18; ctx.textAlign='left'; ctx.font='800 '+ns+'px '+FONT;
   while(ctx.measureText(nm).width>VW-58 && ns>12){ ns--; ctx.font='800 '+ns+'px '+FONT; }
   ctx.fillStyle=COL.ink; ctx.fillText(nm,44,34);
