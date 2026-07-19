@@ -64,6 +64,11 @@ const COL={
   purple:'#5B3F8C', purpleLt:'#8B6FBF', bg:'#FFFFFF', surface:'#F8F7FA',
   green:'#10B981', amber:'#F59E0B', red:'#EF4444', ink:'#2A2140'
 };
+// Sezzle brand palette (Style Guide 2.0 + logo mark gradient)
+const SEZ={
+  mauve:'#8333D4', mauveDk:'#6B23B8', darkPurple:'#382757',
+  green:'#33C88E', greenLt:'#7DE3B6', pink:'#FF5B6B', orange:'#FB861C', yellow:'#FFD36B', ink:'#2D2150'
+};
 // Québec mode swaps trap labels to French
 const FR={ 'LATE FEE':'FRAIS DE RETARD','HIDDEN FEE':'FRAIS CACHÉS','SURPRISE INTEREST':'INTÉRÊTS SURPRISES','DEBT':'DETTE','MIN. PAYMENT':'PAIEMENT MIN.','MINIMUM PAYMENT':'PAIEMENT MINIMUM' };
 function trapLabel(s){ return hardMode && FR[s] ? FR[s] : s; }
@@ -679,6 +684,29 @@ function completeLevel(){
 /* ============================ RENDER ============================ */
 function rr(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
+/* ---- Sezzle "S" logo mark (two interlocking petals, brand gradient) ---- */
+function petalPath(){ // unit teardrop: round bulb up (y≈-1), pointed tail down (y=+1)
+  ctx.beginPath(); ctx.moveTo(0,1);
+  ctx.quadraticCurveTo(-0.74,0.35,-0.62,-0.45);
+  ctx.arc(0,-0.45,0.62,Math.PI,0,false);
+  ctx.quadraticCurveTo(0.74,0.35,0,1); ctx.closePath();
+}
+function drawSezzleLogo(cx,cy,s,rot){
+  ctx.save(); ctx.translate(cx,cy); if(rot) ctx.rotate(rot);
+  const px=0.22*s, py=0.28*s, sx=0.60*s, sy=0.80*s, tilt=0.36;
+  // top-left petal: green -> mauve
+  ctx.save(); ctx.translate(-px,-py); ctx.rotate(tilt); ctx.scale(sx,sy);
+  petalPath(); let g=ctx.createLinearGradient(-0.5,-1,0.3,1);
+  g.addColorStop(0,SEZ.greenLt); g.addColorStop(0.5,SEZ.green); g.addColorStop(1,SEZ.mauve);
+  ctx.fillStyle=g; ctx.fill(); ctx.restore();
+  // bottom-right petal: yellow -> orange -> pink (pink meets the mauve at centre)
+  ctx.save(); ctx.translate(px,py); ctx.rotate(tilt+Math.PI); ctx.scale(sx,sy);
+  petalPath(); let g2=ctx.createLinearGradient(-0.5,-1,0.3,1);
+  g2.addColorStop(0,SEZ.yellow); g2.addColorStop(0.5,SEZ.orange); g2.addColorStop(1,SEZ.pink);
+  ctx.fillStyle=g2; ctx.fill(); ctx.restore();
+  ctx.restore();
+}
+
 /* ---- vector icon library (drawn, no emoji) ---- */
 const LEAF_PTS=[[0,-1],[.13,-.55],[.42,-.62],[.3,-.3],[.62,-.22],[.45,-.02],[.98,.1],[.55,.2],[.68,.55],[.3,.42],[.3,.78],[.08,.62],[.08,1],[-.08,1],[-.08,.62],[-.3,.78],[-.3,.42],[-.68,.55],[-.55,.2],[-.98,.1],[-.45,-.02],[-.62,-.22],[-.3,-.3],[-.42,-.62],[-.13,-.55]];
 function drawLeaf(x,y,s,color){ ctx.save(); ctx.translate(x,y); ctx.fillStyle=color; ctx.beginPath();
@@ -904,18 +932,23 @@ function drawCoin(c){
   ctx.restore();
 }
 function drawExit(e,open){
-  // portal
-  ctx.save(); const cx=e.x+e.w/2, cy=e.y+e.h/2;
-  if(open){ ctx.shadowColor=COL.purpleLt; ctx.shadowBlur=22;
-    for(let i=3;i>=0;i--){ ctx.globalAlpha=0.35+i*0.15; const rad=(e.w/2-6)-(i*5)+Math.sin(player.anim*3+i)*2;
-      ctx.strokeStyle=i%2?COL.purple:COL.green; ctx.lineWidth=4; ctx.beginPath(); ctx.ellipse(cx,cy,rad,e.h/2-6,0,0,7); ctx.stroke(); }
-    ctx.globalAlpha=1; ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.font='700 10px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('EXIT',cx,e.y-2);
+  // portal — the Sezzle logo mark itself
+  ctx.save(); const cx=e.x+e.w/2, cy=e.y+e.h/2; const s=Math.min(e.w,e.h)*0.92;
+  ctx.textAlign='center';
+  if(open){
+    // radiant halo rings in brand colours
+    ctx.shadowColor=SEZ.mauve; ctx.shadowBlur=22;
+    for(let i=3;i>=0;i--){ ctx.globalAlpha=0.14+i*0.08; const rad=(e.w/2+6)-(i*5)+Math.sin(player.anim*3+i)*2;
+      ctx.strokeStyle=i%2?SEZ.mauve:SEZ.green; ctx.lineWidth=3; ctx.beginPath(); ctx.ellipse(cx,cy,rad,e.h/2-2,0,0,7); ctx.stroke(); }
+    ctx.globalAlpha=1; ctx.shadowColor='rgba(131,51,212,.5)'; ctx.shadowBlur=16;
+    drawSezzleLogo(cx,cy+Math.sin(player.anim*2)*3,s);   // gently bobbing logo
+    ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.font='800 12px '+FONT; ctx.fillText('EXIT',cx,e.y-4);
   } else {
-    ctx.globalAlpha=0.5; ctx.strokeStyle='#b7a8d6'; ctx.setLineDash([5,5]); ctx.lineWidth=3;
-    ctx.beginPath(); ctx.ellipse(cx,cy,e.w/2-6,e.h/2-6,0,0,7); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle='#a495c7'; ctx.font='700 9px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.textAlign='center'; ctx.fillText('🔒 '+L.coins.filter(c=>c.collected).length+'/'+L.coins.length,cx,cy+3);
+    // locked: dimmed logo + remaining count
+    ctx.globalAlpha=0.38; drawSezzleLogo(cx,cy-4,s*0.86); ctx.globalAlpha=1;
+    ctx.fillStyle='#8a79ad'; ctx.font='800 12px '+FONT; ctx.fillText('🔒 '+L.coins.filter(c=>c.collected).length+'/'+L.coins.length,cx,cy+e.h/2-2);
   }
-  ctx.restore();
+  ctx.textAlign='left'; ctx.restore();
   // finish flag planted on the ground beside the portal (Canada easter egg 🍁)
   const fx=e.x+e.w+14, ftop=FLOOR-72, wav=Math.sin(player.anim*3)*2;
   ctx.fillStyle='#8a79ad'; ctx.fillRect(fx,ftop,4,72);
@@ -959,44 +992,46 @@ const FONT='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
 function drawHUD(){
   if(flash>0){ ctx.fillStyle='rgba(239,68,68,'+Math.min(0.55,flash)+')'; ctx.fillRect(0,0,VW,VH); }
   // top bar (taller for legibility)
-  ctx.fillStyle='rgba(248,247,250,.95)'; rr(8,8,VW-16,66,16); ctx.fill();
+  ctx.fillStyle='rgba(248,247,250,.96)'; rr(8,8,VW-16,74,18); ctx.fill();
+  // small Sezzle logo mark, top-left brand accent
+  drawSezzleLogo(26,26,15);
   // level name — bigger, auto-shrinks so long names never overflow
   const nm=L.name+(hardMode?' · Québec':'');
-  let ns=16; ctx.textAlign='left'; ctx.font='800 '+ns+'px '+FONT;
-  while(ctx.measureText(nm).width>VW-36 && ns>11){ ns--; ctx.font='800 '+ns+'px '+FONT; }
-  ctx.fillStyle=COL.ink; ctx.fillText(nm,18,33);
-  // installments label + pips + count
-  ctx.font='700 13px '+FONT; ctx.fillStyle=COL.purple; ctx.fillText('Installments',18,60);
-  const px0=18+ctx.measureText('Installments').width+14;
+  let ns=18; ctx.textAlign='left'; ctx.font='800 '+ns+'px '+FONT;
+  while(ctx.measureText(nm).width>VW-58 && ns>12){ ns--; ctx.font='800 '+ns+'px '+FONT; }
+  ctx.fillStyle=COL.ink; ctx.fillText(nm,44,34);
+  // installments label + pips + count (pips in Sezzle mauve)
+  ctx.font='800 14px '+FONT; ctx.fillStyle=SEZ.mauve; ctx.fillText('Installments',18,68);
+  const px0=18+ctx.measureText('Installments').width+16;
   const got=L.coins.filter(c=>c.collected).length;
-  for(let i=0;i<L.coins.length;i++){ const x=px0+i*20; ctx.beginPath(); ctx.arc(x,55,7.5,0,7); ctx.fillStyle=i<got?COL.green:'#d9cfec'; ctx.fill(); if(i<got){ ctx.fillStyle='#fff'; ctx.font='800 10px '+FONT; ctx.textAlign='center'; ctx.fillText('$',x,59); ctx.textAlign='left'; } }
-  const cntX=px0+L.coins.length*20+2;
-  ctx.textAlign='left'; ctx.fillStyle=COL.ink; ctx.font='800 15px '+FONT; ctx.fillText(got+'/'+L.coins.length,cntX,60);
-  if(hardMode){ const ok=L.compliance&&L.compliance.collected; drawFleur(cntX+ctx.measureText(got+'/'+L.coins.length).width+16,56,12,ok?COL.green:COL.amber); }
+  for(let i=0;i<L.coins.length;i++){ const x=px0+i*23; ctx.beginPath(); ctx.arc(x,63,9,0,7); ctx.fillStyle=i<got?SEZ.mauve:'#e0d3f0'; ctx.fill(); if(i<got){ ctx.fillStyle='#fff'; ctx.font='800 11px '+FONT; ctx.textAlign='center'; ctx.fillText('$',x,67); ctx.textAlign='left'; } }
+  const cntX=px0+L.coins.length*23+4;
+  ctx.textAlign='left'; ctx.fillStyle=COL.ink; ctx.font='800 18px '+FONT; ctx.fillText(got+'/'+L.coins.length,cntX,69);
+  if(hardMode){ const ok=L.compliance&&L.compliance.collected; drawFleur(cntX+ctx.measureText(got+'/'+L.coins.length).width+18,64,14,ok?COL.green:SEZ.mauve); }
   // score
-  ctx.textAlign='right'; ctx.fillStyle=COL.purple; ctx.font='800 18px '+FONT; ctx.fillText((totalScore+score).toLocaleString(),VW-18,62);
+  ctx.textAlign='right'; ctx.fillStyle=SEZ.mauve; ctx.font='800 21px '+FONT; ctx.fillText((totalScore+score).toLocaleString(),VW-18,70);
   ctx.textAlign='left';
 
   // streak / XP bar (full-width, thin, no label)
-  ctx.fillStyle='rgba(248,247,250,.95)'; rr(8,82,VW-16,16,8); ctx.fill();
-  const bx=16, by=86, bw=VW-32, frac=Math.min(1,streak/4);
+  ctx.fillStyle='rgba(248,247,250,.96)'; rr(8,90,VW-16,16,8); ctx.fill();
+  const bx=16, by=94, bw=VW-32, frac=Math.min(1,streak/4);
   rr(bx,by,bw,8,4); ctx.fillStyle='#e3d9f4'; ctx.fill();
-  if(frac>0){ ctx.save(); rr(bx,by,bw*frac,8,4); ctx.clip(); const g=ctx.createLinearGradient(bx,0,bx+bw,0); g.addColorStop(0,COL.green); g.addColorStop(1,'#34d399'); ctx.fillStyle=g; ctx.fillRect(bx,by,bw,8); ctx.restore(); }
+  if(frac>0){ ctx.save(); rr(bx,by,bw*frac,8,4); ctx.clip(); const g=ctx.createLinearGradient(bx,0,bx+bw,0); g.addColorStop(0,SEZ.mauve); g.addColorStop(1,SEZ.green); ctx.fillStyle=g; ctx.fillRect(bx,by,bw,8); ctx.restore(); }
 
   // dash meter
-  if(dashT>0){ drawBolt(VW/2-40,116,16,COL.amber); ctx.fillStyle=COL.purple; ctx.font='800 14px '+FONT; ctx.textAlign='center'; ctx.fillText('DASH '+dashT.toFixed(1),VW/2+6,121); ctx.textAlign='left'; }
+  if(dashT>0){ drawBolt(VW/2-42,128,17,COL.amber); ctx.fillStyle=SEZ.mauve; ctx.font='800 15px '+FONT; ctx.textAlign='center'; ctx.fillText('DASH '+dashT.toFixed(1),VW/2+6,133); ctx.textAlign='left'; }
 
   // combo flash
-  if(comboFlash>0 && combo>1){ ctx.save(); ctx.globalAlpha=Math.min(1,comboFlash*2); ctx.textAlign='center'; ctx.fillStyle=COL.green; ctx.font='800 '+(24+combo)+'px '+FONT; ctx.fillText('x'+combo+' STREAK!',VW/2,168); ctx.restore(); }
+  if(comboFlash>0 && combo>1){ ctx.save(); ctx.globalAlpha=Math.min(1,comboFlash*2); ctx.textAlign='center'; ctx.fillStyle=COL.green; ctx.font='800 '+(26+combo)+'px '+FONT; ctx.fillText('x'+combo+' STREAK!',VW/2,176); ctx.restore(); }
 
   drawImp();
   drawToasts();
 }
 function drawImp(){
-  const x=VW-42, y=146+Math.sin(imp.bob*2)*4;
+  const x=VW-42, y=160+Math.sin(imp.bob*2)*4;
   impHead(x,y,20,imp.mood==='shock'?'shock':'grin');
-  if(imp.sayT>0){ ctx.save(); ctx.font='800 13px '+FONT;
-    const w=ctx.measureText(imp.say).width+22, bx=x-w-2, by=y-42, bh=26;   // bubble sits above-left of the imp
+  if(imp.sayT>0){ ctx.save(); ctx.font='800 14px '+FONT;
+    const w=ctx.measureText(imp.say).width+22, bx=x-w-2, by=y-44, bh=28;   // bubble sits above-left of the imp
     rr(bx,by,w,bh,13); ctx.fillStyle='#fff'; ctx.strokeStyle=COL.purpleLt; ctx.lineWidth=1.5; ctx.fill(); ctx.stroke();
     ctx.fillStyle=COL.ink; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(imp.say,bx+w/2,by+bh/2+0.5); ctx.restore(); }
 }
@@ -1037,17 +1072,18 @@ function drawTitle(){
   ctx.textAlign='center';
   // floating imps
   for(let i=0;i<5;i++){ const x=55+i*82, y=690+TY+Math.sin(perf/600+i)*14; ctx.globalAlpha=0.35; impHead(x,y,12,'grin'); } ctx.globalAlpha=1;
-  // hero imp
-  impHead(VW/2,160+TY+Math.sin(perf/500)*8,52,'grin');
+  // hero — the Sezzle logo mark (with a small imp peeking beside it)
+  drawSezzleLogo(VW/2,152+TY+Math.sin(perf/500)*8,76);
+  impHead(VW/2+78,176+TY+Math.sin(perf/500+1)*6,22,'grin');
   // title
   ctx.letterSpacing='2px';
-  ctx.fillStyle='#fff'; ctx.font='900 46px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('SEZZLE',VW/2,270+TY);
-  ctx.fillStyle=COL.amber; ctx.fillText('DEVIL',VW/2,318+TY);
+  ctx.fillStyle='#fff'; ctx.font='900 46px '+FONT; ctx.fillText('SEZZLE',VW/2,272+TY);
+  ctx.fillStyle=COL.amber; ctx.fillText('DEVIL',VW/2,320+TY);
   ctx.letterSpacing='0px';
-  ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='600 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('Beat the devil of paying the old way.',VW/2,356+TY);
-  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('Pick your region — same 10 levels, more pain', VW/2,380+TY);
+  ctx.fillStyle='rgba(255,255,255,.94)'; ctx.font='600 16px '+FONT;
+  ctx.fillText('Beat the devil of paying the old way.',VW/2,358+TY);
+  ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='500 13px '+FONT;
+  ctx.fillText('Pick your region — same 10 levels, more pain', VW/2,382+TY);
   iconButton('USA · EASY',410+TY,COL.green,1,(x,y)=>drawStar(x,y,11,'#fff'));
   iconButton('CANADA · MEDIUM',470+TY,COL.purple,2,(x,y)=>drawLeaf(x,y,11,'#fff'));
   iconButton('QUÉBEC · BRUTAL',530+TY,COL.red,3,(x,y)=>drawFleur(x,y,16,'#fff'));
@@ -1063,18 +1099,20 @@ function drawDeath(){
   drawWorld();
   ctx.fillStyle='rgba(42,33,64,.82)'; ctx.fillRect(0,0,VW,VH);
   ctx.textAlign='center';
-  impHead(VW/2,VH/2-152+Math.sin(perf/300)*6,46,'laugh');
-  // headline — WHAT just happened (bigger, auto-shrinks to fit)
+  impHead(VW/2,VH/2-158+Math.sin(perf/300)*6,46,'laugh');
+  // headline — WHAT just happened (big, auto-shrinks to fit)
   const one=deathInfo?deathInfo.one:'Ouch!';
-  let hs=30; ctx.font='900 '+hs+'px '+FONT;
-  while(ctx.measureText(one).width>VW-44 && hs>20){ hs--; ctx.font='900 '+hs+'px '+FONT; }
-  ctx.fillStyle='#fff'; ctx.fillText(one,VW/2,VH/2-74);
+  let hs=34; ctx.font='900 '+hs+'px '+FONT;
+  while(ctx.measureText(one).width>VW-40 && hs>22){ hs--; ctx.font='900 '+hs+'px '+FONT; }
+  ctx.fillStyle='#fff'; ctx.fillText(one,VW/2,VH/2-78);
   // lesson card (bigger, more readable)
-  ctx.fillStyle=COL.surface; rr(VW/2-182,VH/2-46,364,150,18); ctx.fill();
-  ctx.fillStyle=COL.purple; ctx.font='800 13px '+FONT; ctx.letterSpacing='1.5px'; ctx.fillText('THE SEZZLE WAY',VW/2,VH/2-22); ctx.letterSpacing='0px';
-  ctx.fillStyle=COL.ink; ctx.font='600 16px '+FONT;
-  wrapText(deathInfo?deathInfo.les:'',VW/2,VH/2+2,322,22);
-  button('RETRY ↻',VH/2+120,COL.purple);
+  ctx.fillStyle=COL.surface; rr(VW/2-186,VH/2-50,372,168,18); ctx.fill();
+  ctx.font='800 14px '+FONT; ctx.letterSpacing='1.5px'; const swW=ctx.measureText('THE SEZZLE WAY').width;
+  drawSezzleLogo(VW/2-swW/2-13,VH/2-27,14);
+  ctx.fillStyle=SEZ.mauve; ctx.font='800 14px '+FONT; ctx.fillText('THE SEZZLE WAY',VW/2+11,VH/2-23); ctx.letterSpacing='0px';
+  ctx.fillStyle=COL.ink; ctx.font='600 18px '+FONT;
+  wrapText(deathInfo?deathInfo.les:'',VW/2,VH/2+4,330,24);
+  button('RETRY ↻',VH/2+134,COL.purple);
   ctx.textAlign='left';
 }
 function drawClear(){
@@ -1094,7 +1132,8 @@ function drawWin(){
   const g=ctx.createLinearGradient(0,0,0,VH); g.addColorStop(0,'#6b4aa3'); g.addColorStop(1,'#2a1d47'); ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
   drawConfetti();
   ctx.textAlign='center';
-  ctx.save(); ctx.shadowColor=COL.amber; ctx.shadowBlur=20; drawTrophy(VW/2,168+TY,64,COL.amber); ctx.restore();
+  drawSezzleLogo(VW/2-50,166+TY,62);
+  ctx.save(); ctx.shadowColor=COL.amber; ctx.shadowBlur=20; drawTrophy(VW/2+54,172+TY,56,COL.amber); ctx.restore();
   ctx.letterSpacing='1px';
   ctx.fillStyle='#fff'; ctx.font='900 36px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('YOU BEAT',VW/2,262+TY);
   ctx.fillStyle=COL.amber; ctx.font='900 40px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('THE DEVIL!',VW/2,308+TY);
