@@ -82,14 +82,19 @@ function resize(){
   const isTouch=(window.matchMedia && window.matchMedia('(pointer:coarse)').matches) || ('ontouchstart' in window);
   dpr=Math.min(window.devicePixelRatio||1, 2);
   if(isTouch){
-    // Full-bleed: fill the viewport width, and grow the virtual height so the
-    // canvas covers the whole screen. The translucent controls float over the
-    // bottom underground band, which sits below the play floor (FLOOR=700).
-    VH=Math.max(VH_BASE, Math.min(1180, Math.round(VW*h/Math.max(1,w))));
-    const scale=w/VW;
-    cssW=w; cssH=Math.round(VH*scale);
-    canvas.style.left='0'; canvas.style.transform='none';
-    canvas.style.top=Math.round((h-cssH)/2)+'px';   // ~0 in the common case; gently centered if clamped
+    // Fill the viewport width when possible, but never let the play floor slip
+    // under the controls or the canvas overflow the viewport height. RB is the
+    // control band (button height + bottom inset + safe-area) that must stay
+    // below FLOOR. scale = min(fill-width, fit-height-with-reserve):
+    //  - tall portrait phones -> width binds -> full-bleed, big underground band
+    //  - short 16:9 phones    -> reserve binds -> slight side bars, floor clears
+    //  - wide/landscape touch  -> reserve binds -> letterboxed, gameplay visible
+    const RB=140;
+    const scale=Math.min(w/VW, (h-RB)/FLOOR);
+    VH=Math.max(VH_BASE, Math.min(1180, Math.round(h/scale)));
+    cssW=Math.round(VW*scale); cssH=Math.round(VH*scale);
+    canvas.style.left='50%'; canvas.style.transform='translateX(-50%)';
+    canvas.style.top=Math.round((h-cssH)/2)+'px';   // ~0 in the common (full-bleed) case
   } else {
     // Desktop: fixed 450x800, letterboxed and centered (unchanged).
     VH=VH_BASE;
