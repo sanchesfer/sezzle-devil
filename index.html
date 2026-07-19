@@ -317,16 +317,22 @@ let worldTime=0;                    // drives moving platforms
 let shove={t:0,vx:0};               // active minimum-payment shove impulse
 let denialFired=false, denialKnown=false, flash=0; // near-exit "CREDIT DENIED" betrayal
 
-const player={x:0,y:0,vx:0,vy:0,grounded:false,face:1,onPlat:null,coyote:0,jumpBuf:0,jumpCut:false,squash:0,anim:0};
+const player={x:0,y:0,vx:0,vy:0,grounded:false,face:1,onPlat:null,coyote:0,jumpBuf:0,jumpCut:false,squash:0,anim:0,powerHeld:false,boostUsed:false,jumped:false,jumpY0:0};
 
 /* ============================ INPUT ============================ */
 const input={left:false,right:false,jumpHeld:false};
 let jumpQueued=false;
+let lastJumpPressT=-1e9, powerJumpQueued=false;   // double-tap ("power jump") detection
+const DTAP_MS=280;                                 // a second jump press within this window = power jump
 
 function press(k){ audioInit();
   if(k==='left') input.left=true;
   else if(k==='right') input.right=true;
-  else if(k==='jump'){ if(!input.jumpHeld) jumpQueued=true; input.jumpHeld=true; }
+  else if(k==='jump'){
+    if(perf-lastJumpPressT<DTAP_MS) powerJumpQueued=true;   // quick second tap → jump higher (like holding)
+    lastJumpPressT=perf;
+    if(!input.jumpHeld) jumpQueued=true; input.jumpHeld=true;
+  }
 }
 function release(k){
   if(k==='left') input.left=false;
@@ -412,7 +418,7 @@ function loadLevel(n){
 }
 function resetSection(full){
   player.x=cp.x; player.y=cp.y; player.vx=0; player.vy=0; player.grounded=false; player.onPlat=null;
-  player.coyote=0; player.jumpBuf=0; player.jumpCut=false; player.squash=0;
+  player.coyote=0; player.jumpBuf=0; player.jumpCut=false; player.squash=0; player.powerHeld=false; player.boostUsed=false; player.jumped=false;
   invuln=0.6;
   L.trapdoors.forEach(t=>{t.dropped=false;t.t=0;t.trig=false;});
   L.fakes.forEach(f=>{f.vanished=false;f.t=0;f.trig=false;});
@@ -586,15 +592,29 @@ function update(dt){
     }
   }
 
-  // --- jump (coyote + buffer + variable) ---
-  if(player.grounded) player.coyote=COYOTE; else player.coyote-=dt;
+  // --- jump (coyote + buffer + variable + double-tap power jump) ---
+  if(player.grounded){ player.coyote=COYOTE; player.boostUsed=false; player.powerHeld=false; player.jumped=false; }
+  else player.coyote-=dt;
   if(jumpQueued){ player.jumpBuf=BUFFER; jumpQueued=false; }
   player.jumpBuf-=dt;
   if(player.jumpBuf>0 && player.coyote>0){
     player.vy=JUMP_V; player.grounded=false; player.coyote=0; player.jumpBuf=0; player.jumpCut=false;
+    player.jumpY0=player.y; player.jumped=true;
     sfx.jump(); player.squash=-0.5; spawnDust(player.x+P_W/2,player.y+P_H);
   }
-  if(player.vy<0 && !input.jumpHeld && !player.jumpCut){ player.vy*=CUT; player.jumpCut=true; }
+  // double-tap "power jump": bring a quick-tap hop up to full HELD height (not higher) — once per jump
+  if(powerJumpQueued){
+    powerJumpQueued=false;
+    const MAXRISE=(JUMP_V*JUMP_V)/(2*GRAV_UP);   // apex a full held jump reaches (~156px)
+    if(player.grounded || player.coyote>0){ player.powerHeld=true; player.boostUsed=true; }  // grounded: just don't cut this jump
+    else if(player.jumped && !player.boostUsed){                                             // airborne from the first hop
+      const remaining=MAXRISE-(player.jumpY0-player.y);   // how much more rise to reach the held apex
+      player.boostUsed=true; player.powerHeld=true; player.jumpCut=false;
+      if(remaining>4){ player.vy=-Math.sqrt(2*GRAV_UP*remaining);
+        sfx.jump(); player.squash=-0.55; spawnDust(player.x+P_W/2,player.y+P_H); spawnBurst(player.x+P_W/2,player.y+P_H,SEZ.mauve,8); }
+    }
+  }
+  if(player.vy<0 && !input.jumpHeld && !player.jumpCut && !player.powerHeld){ player.vy*=CUT; player.jumpCut=true; }
   player.squash += (0-player.squash)*Math.min(1,dt*10);
 
   // ---------- collectibles ----------
