@@ -164,11 +164,11 @@ const CMP=(x,y)=>({x,y,collected:false});
 // shared trap-type lessons (die() looks up L.tips[type])
 const DTIPS={
   trapdoor:{one:'"LATE FEE" trapdoor! 😈',les:'That solid floor was a late-fee trap. Sezzle puts you on a clear, on-time schedule — stay on it and hop right over.'},
-  spike:{one:'"HIDDEN FEE" — surprise! 🪤',les:'Fees you never saw coming. Sezzle shows your plan up front — no fine-print surprises. Grab coins from above.'},
+  spike:{one:'"HIDDEN FEE" — surprise! 🪤',les:'Fees you never saw coming. With Sezzle you see your payment plan up front. Grab coins from above.'},
   fake:{one:'"SURPRISE INTEREST" — poof! 💸',les:'The grand easy path was a lie. Sezzle\'s Pay-in-4 is 0% interest — trust the humble solid steps.'},
   shover:{one:'"MINIMUM PAYMENT" shove! 😱',les:'Minimum payments fling you right back into debt. Sezzle splits it into set installments — jump the marked spot.'},
   void:{one:'"DEBT" pit! 🌋',les:'The old way drops you into debt. Split it into installments with Sezzle and cross safely. Try again.'},
-  denial:{one:'"CREDIT DENIED" — at the finish?! 🏦🚫',les:'The old way runs a hard credit check and denies you at the worst moment. Sezzle uses no hard credit check, so it won\'t ding your credit score. Walk right back in.'}
+  denial:{one:'"CREDIT DENIED" — at the finish?! 🏦🚫',les:'A surprise hard credit check can trip you up at the worst moment. Sezzle\'s Pay-in-4 uses only a soft check, so it won\'t affect your credit score. Walk right in.'}
 };
 const LEVEL_COUNT=10;
 
@@ -955,9 +955,9 @@ function drawExit(e,open){
     ctx.globalAlpha=0.4; drawSezzleLogo(cx,cy-2,s*0.9); ctx.globalAlpha=1;
     ctx.fillStyle='#8a79ad'; ctx.font='800 12px '+FONT; ctx.fillText('🔒 '+L.coins.filter(c=>c.collected).length+'/'+L.coins.length,cx,cy+e.h/2+4);
   }
-  // once you've learned the fake denial, Sezzle stamps you APPROVED
+  // once you've learned the fake denial, Sezzle's soft-check payoff
   if(L.denial && denialKnown){ ctx.font='800 10px '+FONT;
-    const t='SEZZLE ✓ APPROVED', w=ctx.measureText(t).width+14; ctx.shadowColor=COL.green; ctx.shadowBlur=10;
+    const t='SEZZLE ✓ NO HARD CHECK', w=ctx.measureText(t).width+14; ctx.shadowColor=COL.green; ctx.shadowBlur=10;
     rr(cx-w/2,e.y-32,w,17,8); ctx.fillStyle=COL.green; ctx.fill(); ctx.shadowBlur=0; ctx.fillStyle='#fff'; ctx.fillText(t,cx,e.y-20); }
   ctx.textAlign='left'; ctx.restore();
 }
