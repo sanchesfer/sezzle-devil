@@ -163,12 +163,12 @@ const PUCK=(x,y)=>({x,y,r:15,collected:false});
 const CMP=(x,y)=>({x,y,collected:false});
 // shared trap-type lessons (die() looks up L.tips[type])
 const DTIPS={
-  trapdoor:{one:'"LATE FEE" trapdoor! 😈',les:'That solid floor was a late-fee trap. Sezzle charges ZERO late fees — now you know: hop over it.'},
-  spike:{one:'"HIDDEN FEE" — surprise! 🪤',les:'Fees you never saw coming. Sezzle has ZERO hidden fees. Grab coins from above, not by standing on the fine print.'},
-  fake:{one:'"SURPRISE INTEREST" — poof! 💸',les:'The grand easy path was a lie. Sezzle is always 0% interest — trust the humble solid steps.'},
-  shover:{one:'"MINIMUM PAYMENT" shove! 😱',les:'Minimum payments fling you right back into debt. Pay in 4 on a fixed path — jump the marked spot.'},
-  void:{one:'"DEBT" pit! 🌋',les:'The old way drops you into debt. Split it in 4 with Sezzle and cross safely. Try again.'},
-  denial:{one:'"CREDIT DENIED" — at the finish?! 🏦🚫',les:'The old way runs a hard credit check and denies you at the worst moment. Sezzle does NO hard credit check — you\'re approved. Walk right back in.'}
+  trapdoor:{one:'"LATE FEE" trapdoor! 😈',les:'That solid floor was a late-fee trap. Sezzle puts you on a clear, on-time schedule — stay on it and hop right over.'},
+  spike:{one:'"HIDDEN FEE" — surprise! 🪤',les:'Fees you never saw coming. Sezzle shows your plan up front — no fine-print surprises. Grab coins from above.'},
+  fake:{one:'"SURPRISE INTEREST" — poof! 💸',les:'The grand easy path was a lie. Sezzle\'s Pay-in-4 is 0% interest — trust the humble solid steps.'},
+  shover:{one:'"MINIMUM PAYMENT" shove! 😱',les:'Minimum payments fling you right back into debt. Sezzle splits it into set installments — jump the marked spot.'},
+  void:{one:'"DEBT" pit! 🌋',les:'The old way drops you into debt. Split it into installments with Sezzle and cross safely. Try again.'},
+  denial:{one:'"CREDIT DENIED" — at the finish?! 🏦🚫',les:'The old way runs a hard credit check and denies you at the worst moment. Sezzle uses no hard credit check, so it won\'t ding your credit score. Walk right back in.'}
 };
 const LEVEL_COUNT=10;
 
@@ -1140,7 +1140,7 @@ function drawClear(){
   ctx.fillStyle='#fff'; ctx.font='900 34px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.letterSpacing='1px'; ctx.fillText('LEVEL CLEAR!',VW/2,VH/2-90); ctx.letterSpacing='0px';
   const nC=L.coins.length, cw=44, x0=VW/2-(nC-1)*cw/2;
   for(let i=0;i<nC;i++){ const cc={x:x0+i*cw,y:VH/2-22,r:15,order:i}; drawCoin(cc); }
-  ctx.font='700 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillStyle=COL.amber; ctx.textAlign='center'; ctx.fillText('Paid in '+nC+'. No fees. No interest.',VW/2,VH/2+26);
+  ctx.font='700 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillStyle=COL.amber; ctx.textAlign='center'; ctx.fillText('Paid in '+nC+'. 0% interest. On your schedule.',VW/2,VH/2+26);
   ctx.fillStyle='#fff'; ctx.font='800 18px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Score: '+(totalScore).toLocaleString(),VW/2,VH/2+60);
   button(levelIdx>=LEVEL_COUNT-1?'FINISH':'NEXT LEVEL ▶',VH/2+92,COL.green);
   drawHomeButton();
@@ -1159,7 +1159,7 @@ function drawWin(){
   ctx.letterSpacing='0px';
   ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
   ctx.fillText('You paid the Sezzle way — on time,',VW/2,356+TY);
-  ctx.fillText('0% interest, no hidden or late fees.',VW/2,378+TY);
+  ctx.fillText('in installments at 0% interest.',VW/2,378+TY);
   if(hardMode){ ctx.fillStyle=COL.amber; ctx.font='800 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('...and you survived QUÉBEC compliance!',VW/2,404+TY); }
   ctx.fillStyle='#fff'; ctx.font='800 26px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Final Score',VW/2,440+TY);
   ctx.fillStyle=COL.green; ctx.font='900 44px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText(totalScore.toLocaleString(),VW/2,486+TY);
