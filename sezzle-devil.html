@@ -1018,7 +1018,6 @@ function drawHUD(){
   for(let i=0;i<L.coins.length;i++){ const x=px0+i*23; ctx.beginPath(); ctx.arc(x,63,9,0,7); ctx.fillStyle=i<got?SEZ.mauve:'#e0d3f0'; ctx.fill(); if(i<got){ ctx.fillStyle='#fff'; ctx.font='800 11px '+FONT; ctx.textAlign='center'; ctx.fillText('$',x,67); ctx.textAlign='left'; } }
   const cntX=px0+L.coins.length*23+4;
   ctx.textAlign='left'; ctx.fillStyle=COL.ink; ctx.font='800 18px '+FONT; ctx.fillText(got+'/'+L.coins.length,cntX,69);
-  if(hardMode){ const ok=L.compliance&&L.compliance.collected; drawFleur(cntX+ctx.measureText(got+'/'+L.coins.length).width+18,64,14,ok?COL.green:SEZ.mauve); }
   // score
   ctx.textAlign='right'; ctx.fillStyle=SEZ.mauve; ctx.font='800 21px '+FONT; ctx.fillText((totalScore+score).toLocaleString(),VW-18,70);
   ctx.textAlign='left';
