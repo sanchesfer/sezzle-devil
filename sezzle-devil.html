@@ -358,6 +358,7 @@ window.addEventListener('keydown',e=>{
   else if(e.key==='ArrowRight'||e.key==='d') press('right');
   else if(e.key==='ArrowUp'||e.key===' '||e.key==='Space'||e.key==='w') press('jump');
   else if(e.key==='Enter') tapMenu();
+  else if(e.key==='Escape' && state!=='title') goHome();
 });
 window.addEventListener('keyup',e=>{
   if(e.key==='ArrowLeft'||e.key==='a') release('left');
@@ -370,8 +371,9 @@ function toVirt(cx,cy){
   const r=canvas.getBoundingClientRect();
   return { x:(cx-r.left)/r.width*VW, y:(cy-r.top)/r.height*VH };
 }
-let menuBtn=null, menuBtn2=null, menuBtn3=null; // {x,y,w,h}
+let menuBtn=null, menuBtn2=null, menuBtn3=null, homeBtn=null; // {x,y,w,h}
 function hitBtn(b,p){ return b && p.x>=b.x && p.x<=b.x+b.w && p.y>=b.y && p.y<=b.y+b.h; }
+function goHome(){ sfx.ui(); state='title'; showPads(false); }
 canvas.addEventListener('pointerdown',e=>{
   audioInit();
   const p=toVirt(e.clientX,e.clientY);
@@ -379,7 +381,8 @@ canvas.addEventListener('pointerdown',e=>{
     if(hitBtn(menuBtn3,p)){ diff='quebec'; hardMode=true; sfx.ui(); startGame(); }
     else if(hitBtn(menuBtn2,p)){ diff='canada'; hardMode=false; sfx.ui(); startGame(); }
     else if(hitBtn(menuBtn,p)){ diff='usa'; hardMode=false; sfx.ui(); startGame(); }
-  } else if(hitBtn(menuBtn,p)){ tapMenu(); }
+  } else if(hitBtn(homeBtn,p)){ goHome(); }        // back to difficulty select
+  else if(hitBtn(menuBtn,p)){ tapMenu(); }
   else if(state==='dying'){ tapMenu(); }
 });
 function tapMenu(){
@@ -991,6 +994,16 @@ function drawPlayer(){
 
 /* ============================ HUD + SCREENS ============================ */
 const FONT='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function drawHomeButton(){   // top-right; taps return to the difficulty-select title
+  const b={x:VW-46,y:11,w:34,h:30}; homeBtn=b;
+  ctx.save();
+  rr(b.x,b.y,b.w,b.h,9); ctx.fillStyle='rgba(131,51,212,0.9)'; ctx.fill();
+  const hx=b.x+b.w/2, hy=b.y+b.h/2+1;
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2.2; ctx.lineJoin='round'; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(hx-8,hy-1); ctx.lineTo(hx,hy-8); ctx.lineTo(hx+8,hy-1); ctx.stroke();   // roof
+  ctx.beginPath(); ctx.moveTo(hx-5.5,hy-2); ctx.lineTo(hx-5.5,hy+6); ctx.lineTo(hx+5.5,hy+6); ctx.lineTo(hx+5.5,hy-2); ctx.stroke();  // walls
+  ctx.restore();
+}
 function drawHUD(){
   if(flash>0){ ctx.fillStyle='rgba(239,68,68,'+Math.min(0.55,flash)+')'; ctx.fillRect(0,0,VW,VH); }
   // top bar (taller for legibility)
@@ -1000,7 +1013,7 @@ function drawHUD(){
   // level name — bigger, auto-shrinks so long names never overflow
   const nm=L.name+(hardMode?' · Québec':'')+((hardMode&&L.invert)?' ⇄':'');
   let ns=18; ctx.textAlign='left'; ctx.font='800 '+ns+'px '+FONT;
-  while(ctx.measureText(nm).width>VW-58 && ns>12){ ns--; ctx.font='800 '+ns+'px '+FONT; }
+  while(ctx.measureText(nm).width>VW-100 && ns>12){ ns--; ctx.font='800 '+ns+'px '+FONT; }   // leave room for the home button
   ctx.fillStyle=COL.ink; ctx.fillText(nm,44,34);
   // installments label + pips + count (pips in Sezzle mauve)
   ctx.font='800 14px '+FONT; ctx.fillStyle=SEZ.mauve; ctx.fillText('Installments',18,68);
@@ -1026,6 +1039,7 @@ function drawHUD(){
   // combo flash
   if(comboFlash>0 && combo>1){ ctx.save(); ctx.globalAlpha=Math.min(1,comboFlash*2); ctx.textAlign='center'; ctx.fillStyle=COL.green; ctx.font='800 '+(26+combo)+'px '+FONT; ctx.fillText('x'+combo+' STREAK!',VW/2,176); ctx.restore(); }
 
+  drawHomeButton();
   drawImp();
   drawToasts();
 }
@@ -1115,6 +1129,7 @@ function drawDeath(){
   ctx.fillStyle=COL.ink; ctx.font='600 18px '+FONT;
   wrapText(deathInfo?deathInfo.les:'',VW/2,VH/2+4,330,24);
   button('RETRY ↻',VH/2+134,COL.purple);
+  drawHomeButton();
   ctx.textAlign='left';
 }
 function drawClear(){
@@ -1128,6 +1143,7 @@ function drawClear(){
   ctx.font='700 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillStyle=COL.amber; ctx.textAlign='center'; ctx.fillText('Paid in '+nC+'. No fees. No interest.',VW/2,VH/2+26);
   ctx.fillStyle='#fff'; ctx.font='800 18px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Score: '+(totalScore).toLocaleString(),VW/2,VH/2+60);
   button(levelIdx>=LEVEL_COUNT-1?'FINISH':'NEXT LEVEL ▶',VH/2+92,COL.green);
+  drawHomeButton();
   ctx.textAlign='left';
 }
 function drawWin(){
@@ -1161,7 +1177,7 @@ function frame(t){
   if(!last) last=t; let dt=(t-last)/1000; last=t; perf=t;
   if(dt>0.05) dt=0.05;
 
-  menuBtn=null; menuBtn2=null; menuBtn3=null;
+  menuBtn=null; menuBtn2=null; menuBtn3=null; homeBtn=null;
   ctx.clearRect(0,0,VW,VH);
 
   if(state==='title'){ drawTitle(); }
