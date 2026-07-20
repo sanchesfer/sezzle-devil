@@ -163,12 +163,12 @@ const PUCK=(x,y)=>({x,y,r:15,collected:false});
 const CMP=(x,y)=>({x,y,collected:false});
 // shared trap-type lessons (die() looks up L.tips[type])
 const DTIPS={
-  trapdoor:{one:'"LATE FEE" trapdoor! 😈',les:'That solid floor was a late-fee trap. Sezzle puts you on a clear, on-time schedule — stay on it and hop right over.'},
-  spike:{one:'"HIDDEN FEE" — surprise! 🪤',les:'Fees you never saw coming. With Sezzle you see your payment plan up front. Grab coins from above.'},
-  fake:{one:'"SURPRISE INTEREST" — poof! 💸',les:'The grand easy path was a lie. Sezzle\'s Pay-in-4 is 0% interest — trust the humble solid steps.'},
-  shover:{one:'"MINIMUM PAYMENT" shove! 😱',les:'Minimum payments fling you right back into debt. Sezzle splits it into set installments — jump the marked spot.'},
+  trapdoor:{one:'"LATE FEE" trapdoor! 😈',les:'That solid floor was a late-fee trap. Sezzle puts you on a clear, on-time schedule. Stay on it and hop right over.'},
+  spike:{one:'"HIDDEN FEE" surprise! 🪤',les:'Fees you never saw coming. With Sezzle you see your payment plan up front. Grab coins from above.'},
+  fake:{one:'"SURPRISE INTEREST"... poof! 💸',les:'The grand easy path was a lie. Sezzle\'s Pay-in-4 is 0% interest. Trust the humble solid steps.'},
+  shover:{one:'"MINIMUM PAYMENT" shove! 😱',les:'Minimum payments fling you right back into debt. Sezzle splits it into set installments. Jump the marked spot.'},
   void:{one:'"DEBT" pit! 🌋',les:'The old way drops you into debt. Split it into installments with Sezzle and cross safely. Try again.'},
-  denial:{one:'"CREDIT DENIED" — at the finish?! 🏦🚫',les:'A surprise hard credit check can trip you up at the worst moment. Sezzle\'s Pay-in-4 uses only a soft check, so it won\'t affect your credit score. Walk right in.'}
+  denial:{one:'"CREDIT DENIED" at the finish?! 🏦🚫',les:'A surprise hard credit check can trip you up at the worst moment. Sezzle\'s Pay-in-4 uses only a soft check, so it won\'t affect your credit score. Walk right in.'}
 };
 const LEVEL_COUNT=10;
 
@@ -418,7 +418,7 @@ function loadLevel(n){
   resetSection(true);
   state='play'; showPads(true);
   imp.say='Bet you can\'t...'; imp.sayT=2.2; imp.mood='grin';
-  if(hardMode && L.invert){ addToast('⚜️ CONTRÔLES INVERSÉS — gauche ⇄ droite!', COL.red); imp.say='gauche? droite?! 😈'; imp.sayT=2.8; imp.mood='laugh'; }
+  if(hardMode && L.invert){ addToast('⚜️ CONTRÔLES INVERSÉS! gauche ⇄ droite', COL.red); imp.say='gauche? droite?! 😈'; imp.sayT=2.8; imp.mood='laugh'; }
 }
 function resetSection(full){
   player.x=cp.x; player.y=cp.y; player.vx=0; player.vy=0; player.grounded=false; player.onPlat=null;
@@ -510,7 +510,7 @@ function update(dt){
   updateMovers();
 
   // dash timer
-  if(dashT>0){ dashT-=dt; if(dashT<=0) addToast('Paid in full — clean & done! ✅',COL.purple);
+  if(dashT>0){ dashT-=dt; if(dashT<=0) addToast('Paid in full. Clean & done! ✅',COL.purple);
     if(Math.random()<0.6) particles.push({x:player.x+P_W/2,y:player.y+P_H/2,vx:-player.face*120,vy:(Math.random()-0.5)*40,life:0.3,age:0,color:COL.purpleLt,size:4}); }
 
   // horizontal velocity — a minimum-payment shove overrides input briefly
@@ -638,33 +638,33 @@ function update(dt){
       score+=100+streak*25+combo*15;
       const got=L.coins.filter(x=>x.collected).length;
       addToast('Installment '+got+'/'+L.coins.length+' paid 🟣',COL.purple);
-      if(got===L.coins.length){ addToast('All '+L.coins.length+' paid — exit portal OPEN! 🌀',COL.purple); }
+      if(got===L.coins.length){ addToast('All '+L.coins.length+' paid! Exit portal OPEN! 🌀',COL.purple); }
     }
   }
   if(L.puck && !L.puck.collected){
     if(Math.hypot((player.x+P_W/2)-L.puck.x,(player.y+P_H/2)-L.puck.y)<L.puck.r+18){
       L.puck.collected=true; score+=500; sfx.coin(3);
       spawnBurst(L.puck.x,L.puck.y,'#111',18);
-      addToast('🏒 Hidden hockey puck! +500 — eh!',COL.ink);
+      addToast('🏒 Hidden hockey puck! +500, eh!',COL.ink);
     }
   }
   if(hardMode && L.compliance && !L.compliance.collected){
     if(Math.hypot((player.x+P_W/2)-L.compliance.x,(player.y+P_H/2)-L.compliance.y)<26){
       L.compliance.collected=true; score+=200; sfx.card();
       spawnBurst(L.compliance.x,L.compliance.y,COL.amber,16);
-      addToast('📋 Conformité déposée — compliance filed! ⚜️',COL.purple);
+      addToast('📋 Conformité déposée. Compliance filed! ⚜️',COL.purple);
     }
   }
   if(L.card && !L.card.taken){
     if(overlap(pb,L.card)){ L.card.taken=true; hasCard=true; sfx.card();
       spawnBurst(L.card.x,L.card.y,COL.purpleLt,20);
-      addToast('💳 Virtual Card — hidden bridge revealed!',COL.purple);
-      imp.mood='shock'; imp.say='wha—?!'; imp.sayT=1.6;
+      addToast('💳 Virtual Card! Hidden bridge revealed!',COL.purple);
+      imp.mood='shock'; imp.say='wha...?!'; imp.sayT=1.6;
     }
   }
   if(L.dash && !L.dash.taken){
     if(overlap(pb,L.dash)){ L.dash.taken=true; dashT=2.6; sfx.dash(); score+=300;
-      addToast('⚡ PAY IN FULL — dash boost!',COL.purple); }
+      addToast('⚡ PAY IN FULL! Dash boost!',COL.purple); }
   }
 
   // checkpoints
@@ -1094,7 +1094,7 @@ function drawTitle(){
   ctx.fillStyle='rgba(255,255,255,.94)'; ctx.font='600 16px '+FONT;
   ctx.fillText('Beat the devil of paying the old way.',VW/2,358+TY);
   ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='500 13px '+FONT;
-  ctx.fillText('Pick your region — same 10 levels, more pain', VW/2,382+TY);
+  ctx.fillText('Pick your region: same 10 levels, more pain', VW/2,382+TY);
   button('USA · EASY',410+TY,COL.green,1);
   button('CANADA · MEDIUM',470+TY,COL.purple,2);
   button('QUÉBEC · BRUTAL',530+TY,COL.red,3);
@@ -1147,7 +1147,7 @@ function drawWin(){
   ctx.fillStyle=COL.amber; ctx.font='900 40px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('THE DEVIL!',VW/2,308+TY);
   ctx.letterSpacing='0px';
   ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('You paid the Sezzle way — on time,',VW/2,356+TY);
+  ctx.fillText('You paid the Sezzle way, on time,',VW/2,356+TY);
   ctx.fillText('in installments at 0% interest.',VW/2,378+TY);
   if(hardMode){ ctx.fillStyle=COL.amber; ctx.font='800 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('...and you survived QUÉBEC compliance!',VW/2,404+TY); }
   ctx.fillStyle='#fff'; ctx.font='800 26px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Final Score',VW/2,440+TY);
