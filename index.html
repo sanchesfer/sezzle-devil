@@ -784,13 +784,6 @@ function drawParallax(){
   ctx.fillStyle='rgba(255,255,255,0.94)';
   const off2=-camX*0.3;
   for(let i=0;i<7;i++){ const cx=((off2+i*185)%(VW+220)+VW+220)%(VW+220)-110; const cy=84+((i*53)%150); cloud(cx,cy,24+(i%3)*8); }
-  // town sign (background flavour) — flanked by stars, sized to the text
-  const sx=-camX*0.4+130;
-  ctx.save(); ctx.globalAlpha=0.92; ctx.fillStyle=COL.purpleLt; ctx.font='800 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.textAlign='center'; ctx.letterSpacing='1px';
-  const town='SPLITSVILLE'; const tw=ctx.measureText(town).width;
-  ctx.fillText(town, sx+140, 152);
-  drawStar(sx+140-tw/2-16,147,7,COL.amber); drawStar(sx+140+tw/2+16,147,7,COL.amber);
-  ctx.letterSpacing='0px'; ctx.restore();
 }
 function hills(off,y,r,color){ ctx.fillStyle=color; for(let i=-1;i<6;i++){ const bx=off+i*r*1.35; ctx.beginPath(); ctx.arc(bx+r*0.68,y,r,Math.PI,0); ctx.fill(); } }
 function cloud(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.arc(x+r,y+6,r*0.8,0,7); ctx.arc(x-r,y+8,r*0.7,0,7); ctx.arc(x+r*0.4,y-r*0.5,r*0.7,0,7); ctx.fill(); }
@@ -944,9 +937,12 @@ function drawCoin(c){
   ctx.save();
   // each installment is a Sezzle logo, gently bobbing (glow is baked into the sprite)
   drawSezzleLogo(c.x, y, c.r*1.45, Math.sin(player.anim*1.6+c.x)*0.12);
-  // installment number badge above it
-  ctx.fillStyle=SEZ.mauve; ctx.font='800 10px '+FONT; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillText(String(c.order+1), c.x, y-c.r*1.7-4);
+  // installment number badge above it — white with a dark outline so it reads on
+  // both the light in-world sky and the purple level-clear background
+  const bn=String(c.order+1), byy=y-c.r*1.7-4;
+  ctx.font='800 12px '+FONT; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.lineJoin='round';
+  ctx.lineWidth=3.5; ctx.strokeStyle='rgba(42,33,64,0.9)'; ctx.strokeText(bn,c.x,byy);
+  ctx.fillStyle='#fff'; ctx.fillText(bn,c.x,byy);
   ctx.textAlign='left'; ctx.restore();
 }
 function drawExit(e,open){
@@ -1065,7 +1061,7 @@ function drawToasts(){
 function drawConfetti(){ for(const c of confetti){ ctx.save(); ctx.globalAlpha=Math.min(1,c.life); ctx.translate(c.x,c.y); ctx.rotate(c.rot); ctx.fillStyle=c.color; ctx.fillRect(-c.size/2,-c.size/2,c.size,c.size*0.6); ctx.restore(); } }
 
 function button(text,y,color,which){
-  const w=256,h=52,x=VW/2-w/2; const b={x,y,w,h}; if(which===2) menuBtn2=b; else menuBtn=b;
+  const w=256,h=52,x=VW/2-w/2; const b={x,y,w,h}; if(which===3) menuBtn3=b; else if(which===2) menuBtn2=b; else menuBtn=b;
   ctx.save(); ctx.shadowColor='rgba(0,0,0,.25)'; ctx.shadowBlur=14; ctx.shadowOffsetY=5;
   rr(x,y,w,h,16); ctx.fillStyle=color||COL.green; ctx.fill(); ctx.restore();
   ctx.fillStyle='#fff'; ctx.font='800 19px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -1100,15 +1096,9 @@ function drawTitle(){
   ctx.fillText('Beat the devil of paying the old way.',VW/2,358+TY);
   ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='500 13px '+FONT;
   ctx.fillText('Pick your region — same 10 levels, more pain', VW/2,382+TY);
-  iconButton('USA · EASY',410+TY,COL.green,1,(x,y)=>drawStar(x,y,11,'#fff'));
-  iconButton('CANADA · MEDIUM',470+TY,COL.purple,2,(x,y)=>drawLeaf(x,y,11,'#fff'));
-  iconButton('QUÉBEC · BRUTAL',530+TY,COL.red,3,(x,y)=>drawFleur(x,y,16,'#fff'));
-  ctx.textAlign='center';
-  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  ctx.fillText('Québec: harder traps · en français · + compliance', VW/2,600+TY);
-  ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='700 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-  const cr='Powered by Sezzle · Sezzleville, Canada'; ctx.fillText(cr,VW/2,VH-24);
-  drawLeaf(VW/2+ctx.measureText(cr).width/2+10,VH-27,6,'#E0576A');
+  button('USA · EASY',410+TY,COL.green,1);
+  button('CANADA · MEDIUM',470+TY,COL.purple,2);
+  button('QUÉBEC · BRUTAL',530+TY,COL.red,3);
   ctx.textAlign='left';
 }
 function drawDeath(){
@@ -1164,7 +1154,6 @@ function drawWin(){
   ctx.fillStyle='#fff'; ctx.font='800 26px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Final Score',VW/2,440+TY);
   ctx.fillStyle=COL.green; ctx.font='900 44px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText(totalScore.toLocaleString(),VW/2,486+TY);
   button('PLAY AGAIN ↻',540+TY,COL.green);
-  ctx.fillStyle='rgba(255,255,255,.7)'; ctx.font='700 13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; ctx.fillText('Powered by Sezzle · Sezzleville, Canada 🍁',VW/2,VH-30);
   ctx.textAlign='left';
 }
 function wrapText(text,x,y,maxW,lh){ const words=text.split(' '); let line='',yy=y;
